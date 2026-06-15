@@ -1,297 +1,616 @@
 {% extends "base.html" %}
 {% block content %}
+
 <style>
-    .item-row.status-packed { background-color: #e8f5e9; text-decoration: line-through; color: #6c757d; }
-    .item-row.status-na { background-color: #e9ecef; color: #adb5bd; }
-    .item-row.status-standby { background-color: #fff3cd; }
-    .item-row { transition: background-color 0.3s ease; }
+.trip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 10px 20px 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.trip-title {
+    font-size: 2em;
+    margin: 0;
+    font-weight: 600;
+}
+
+.trip-actions a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.trip-actions a:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.search-bar {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.search-bar input {
+    padding: 12px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: all 0.3s;
+}
+
+.search-bar input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9em;
+}
+
+.filter-btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.category-section {
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+
+.category-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.category-stats {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-bar {
+    width: 150px;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 500;
+}
+
+.category-items {
+    padding: 10px 20px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 3px 3px 15px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    background: #fafafa;
+
+}
+
+.item-row:hover {
+    background: #f0f4ff;
+    transform: translateX(5px);
+}
+
+.item-row.status-packed {
+    border-left-color: #4caf50;
+    background: #f1f8f4;
+}
+
+.item-row.status-na {
+    border-left-color: #9e9e9e;
+    background: #f5f5f5;
+    opacity: 0.7;
+}
+
+.item-row.status-standby {
+    border-left-color: #ff9800;
+    background: #fff8f0;
+}
+
+.item-checkbox {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.item-checkbox input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.item-checkbox input:checked ~ .checkmark {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+.item-checkbox input:checked ~ .checkmark:after {
+    content: "✓";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.item-name {
+    flex: 1;
+    font-size: 1.1em;
+    color: #333;
+    font-weight: 500;
+}
+
+.item-row.status-packed .item-name {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.item-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    padding-right: 10px;
+}
+
+.item-row:hover .item-actions {
+    opacity: 1;
+}
+
+.status-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.status-btn.na {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.status-btn.standby {
+    background: #ffe0b2;
+    color: #f57c00;
+}
+
+.status-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.item-notes {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.9em;
+    resize: vertical;
+    min-height: 40px;
+    transition: all 0.3s;
+}
+
+.item-notes:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.add-item-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.add-item-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.add-item-form {
+    display: none;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.add-item-form.active {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.add-item-form input {
+    width: calc(100% - 100px);
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    margin-right: 10px;
+}
+
+.add-item-form button {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .trip-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .category-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .progress-bar {
+        width: 100px;
+    }
+    
+    .item-row {
+        flex-wrap: wrap;
+    }
+    
+    .item-actions {
+        width: 100%;
+        margin-top: 10px;
+        opacity: 1;
+    }
+}
 </style>
-<div class="mb-4">
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
-        <i class="fas fa-arrow-left"></i> {{ t('dashboard') }}
-    </a>
-</div>
 
-<div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-        <h3 class="mb-0"><i class="fas fa-plane"></i> {{ trip.name }}</h3>
+<div class="trip-header">
+    <h1 class="trip-title">{{ trip.name }}</h1>
+    <div class="trip-actions">
+        <a href="{{ url_for('dashboard') }}">← {{ t('dashboard') }}</a>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <h5 class="mb-0"><i class="fas fa-plus-circle"></i> {{ t('add_quick_item') }}</h5>
-    </div>
-    <div class="card-body">
-        <form id="addQuickItemForm">
-            <div class="row">
-                <div class="col-md-5">
-                    <input type="text" id="quickItemName" class="form-control" placeholder="{{ t('item_name') }}" required>
-                </div>
-                <div class="col-md-4">
-                    <select id="quickItemCategory" class="form-select" required>
-                        <option value="">{{ t('select_category') }}</option>
-                        {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="fas fa-plus"></i> {{ t('add_to_trip') }}
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
+<div class="search-bar">
+    <input type="text" id="searchInput" placeholder=" {{ t('search_items') }}">
+
+    <button class="filter-btn active" data-filter="all">{{ t('all') }}</button>
+    <button class="filter-btn" data-filter="unchecked">{{ t('status_unchecked') }}</button>
+    <button class="filter-btn" data-filter="packed">{{ t('status_packed') }}</button>
+    <button class="filter-btn" data-filter="na">{{ t('status_na') }}</button>
+    <button class="filter-btn" data-filter="standby">{{ t('status_standby') }}</button>
 </div>
 
 {% if grouped %}
-    {% set global_total = [] %}
-    {% set global_packed = [] %}
-    
-        {% for cat, items in grouped.items() %}
-        {% set cat_total = items|length %}
-        {% set cat_packed = items|selectattr('status', 'equalto', 'packed')|list|length %}
-        {% set cat_percent = (cat_packed / cat_total * 100)|round|int if cat_total > 0 else 0 %}
-        
-        {% if global_total.append(cat_total) %}{% endif %}
-        {% if global_packed.append(cat_packed) %}{% endif %}
-        
-        <div class="card mb-4" data-category-id="{{ cat.id }}">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-folder"></i> {{ get_name(cat) }}
-                    <span class="badge bg-secondary float-end">
-                        <span class="cat-packed-count">{{ cat_packed }}</span> / 
-                        <span class="cat-total-count">{{ cat_total }}</span> {{ t('items_label') }}
-                    </span>
-                </h5>
-                <div class="progress mt-2">
-                    <div class="progress-bar bg-success cat-progress" 
-                         role="progressbar" 
-                         style="width: {{ cat_percent }}%" 
-                         aria-valuenow="{{ cat_percent }}" 
-                         aria-valuemin="0" 
-                         aria-valuemax="100">
-                        <span class="cat-percent-text">{{ cat_percent }}%</span>
+    {% for cat, items in grouped.items() %}
+    <div class="category-section" data-category="{{ cat.id }}">
+        <div class="category-header">
+            <h2 class="category-title">{{ get_name(cat) }}</h2>
+            <div class="category-stats">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (items|selectattr('status', 'equalto', 'packed')|list|length / items|length * 100) if items|length > 0 else 0 }}%"></div>
                     </div>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>{{ t('item_name') }}</th>
-                                <th style="width: 200px;">{{ t('status_unchecked') }}</th>
-                                <th style="width: 250px;">{{ t('notes') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ti in items %}
-                                <tr class="item-row status-{{ ti.status }}" 
-                                    data-item-id="{{ ti.id }}" 
-                                    data-status="{{ ti.status }}">
-                                    <td>{{ get_name(ti.item) }}</td>
-                                    <td>
-                                        <select class="form-select form-select-sm status-select" data-item-id="{{ ti.id }}">
-                                            <option value="unchecked" {% if ti.status == 'unchecked' %}selected{% endif %}>{{ t('status_unchecked') }}</option>
-                                            <option value="packed" {% if ti.status == 'packed' %}selected{% endif %}>{{ t('status_packed') }}</option>
-                                            <option value="na" {% if ti.status == 'na' %}selected{% endif %}>{{ t('status_na') }}</option>
-                                            <option value="standby" {% if ti.status == 'standby' %}selected{% endif %}>{{ t('status_standby') }}</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm notes-input" 
-                                               value="{{ ti.notes }}" data-item-id="{{ ti.id }}" 
-                                               placeholder="{{ t('notes') }}">
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <span class="progress-text">
+                        {{ items|selectattr('status', 'equalto', 'packed')|list|length }}/{{ items|length }}
+                    </span>
                 </div>
             </div>
         </div>
-    {% endfor %}
-
-        {% set total_all = global_total|sum %}
-    {% set packed_all = global_packed|sum %}
-    {% set global_percent = (packed_all / total_all * 100)|round|int if total_all > 0 else 0 %}
-    
-    <div class="card bg-light" id="globalSummary">
-        <div class="card-body">
-            <h5 class="card-title"><i class="fas fa-chart-pie"></i> {{ t('global_summary') }}</h5>
-            <div class="progress mb-3" style="height: 30px;">
-                <div class="progress-bar bg-success progress-bar-striped global-progress" 
-                     role="progressbar" 
-                     style="width: {{ global_percent }}%" 
-                     aria-valuenow="{{ global_percent }}" 
-                     aria-valuemin="0" 
-                     aria-valuemax="100">
-                    <strong><span class="global-percent-text">{{ global_percent }}%</span></strong>
+        
+        <div class="category-items">
+            {% for ti in items %}
+            <div class="item-row status-{{ ti.status }}" data-status="{{ ti.status }}" data-item-id="{{ ti.id }}">
+                <label class="item-checkbox">
+                    <input type="checkbox" {{ 'checked' if ti.status == 'packed' else '' }} onchange="toggleItem({{ ti.id }}, this.checked)">
+                    <span class="checkmark"></span>
+                </label>
+                
+                <span class="item-name">{{ get_name(ti.item) }}</span>
+                
+                <div class="item-actions">
+                    <button class="status-btn na" onclick="setStatus({{ ti.id }}, 'na')" title="{{ t('status_na') }}">
+                        N/A
+                    </button>
+                    <button class="status-btn standby" onclick="setStatus({{ ti.id }}, 'standby')" title="{{ t('status_standby') }}">
+                        ⏸ {{ t('status_standby') if lang == 'es' else 'Standby' }}
+                    </button>
                 </div>
+                <textarea class="item-notes" 
+                          placeholder="{{ t('notes') }}" 
+                          onchange="updateNotes({{ ti.id }}, this.value)"
+                          rows="1">{{ ti.notes }}</textarea>
             </div>
-            <p class="mb-0">
-                <strong><span class="global-packed-text">{{ packed_all }}</span></strong> / 
-                <strong><span class="global-total-text">{{ total_all }}</span></strong> {{ t('items_label') }} 
-                {{ 'packed' if lang == 'en' else 'empacados' }}
-            </p>
+            
+                
+       
+            {% endfor %}
+            
+            <button class="add-item-btn" onclick="toggleAddForm({{ cat.id }})">
+                <span style="font-size: 1.5em;">+</span>
+                {{ t('add_item') }}
+            </button>
+            
+            <div class="add-item-form" id="add-form-{{ cat.id }}">
+                <form onsubmit="addQuickItem(event, {{ cat.id }})">
+                    <input type="text" placeholder="{{ t('add_item') }}..." required>
+                    <button type="submit">{{ t('add_item') }}</button>
+                </form>
+            </div>
         </div>
     </div>
+    {% endfor %}
 {% else %}
-    <div class="alert alert-info fade show">
-        <i class="fas fa-info-circle"></i> {{ t('no_trips') }}
+    <div style="text-align: center; padding: 40px; color: #666;">
+        <p>{{ t('no_items') }}</p>
     </div>
 {% endif %}
-{% endblock %}
 
-{% block scripts %}
-{{ super() }} <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const csrfToken = '{{ csrf_token() }}';
+<script>
+const CSRF_TOKEN = '{{ csrf_token() }}';
 
-    function recalculateCategoryProgress(categoryCard) {
-        const rows = categoryCard.querySelectorAll('tr.item-row');
-        const total = rows.length;
-        let packed = 0;
-        rows.forEach(row => {
-            if (row.dataset.status === 'packed') packed++;
-        });
-        const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
+function updateItem(itemId, data) {
+    fetch(`/api/update_item/${itemId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const itemRow = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (itemRow && data.status) {
+                itemRow.className = `item-row status-${data.status}`;
+                itemRow.dataset.status = data.status;
 
-        const packedCount = categoryCard.querySelector('.cat-packed-count');
-        const totalCount = categoryCard.querySelector('.cat-total-count');
-        const percentText = categoryCard.querySelector('.cat-percent-text');
-        const progressBar = categoryCard.querySelector('.cat-progress');
+                
+                
+       
+                setTimeout(() => {
+                    const categorySection = itemRow.closest('.category-section');
+                    const addButton = categorySection.querySelector('.add-item-btn');
+                    const addForm = categorySection.querySelector('.add-item-form');
+                    const items = Array.from(categorySection.querySelectorAll('.item-row'));
+                    items.sort((a, b) => {
+                        const order = {'unchecked': 0, 'standby': 1, 'packed': 2, 'na': 3};
+                        return order[a.dataset.status] - order[b.dataset.status];
+                    });
+                    
+                    const container = categorySection.querySelector('.category-items');
+                    items.forEach(item => {
+                        const notes = item.nextElementSibling;
+                        container.appendChild(item);
+                        if (notes) container.appendChild(notes);
+                    });
+                    
 
-        if (packedCount) packedCount.textContent = packed;
-        if (totalCount) totalCount.textContent = total;
-        if (percentText) percentText.textContent = percent + '%';
-        if (progressBar) {
-            progressBar.style.width = percent + '%';
-            progressBar.setAttribute('aria-valuenow', percent);
-        }
-    }
+                    if (addButton) container.appendChild(addButton);
+                    if (addForm) container.appendChild(addForm);
 
-    function recalculateGlobalProgress() {
-        const allRows = document.querySelectorAll('tr.item-row');
-        const total = allRows.length;
-        let packed = 0;
-        allRows.forEach(row => {
-            if (row.dataset.status === 'packed') packed++;
-        });
-        const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
-
-        const packedText = document.querySelector('.global-packed-text');
-        const totalText = document.querySelector('.global-total-text');
-        const percentText = document.querySelector('.global-percent-text');
-        const progressBar = document.querySelector('.global-progress');
-
-        if (packedText) packedText.textContent = packed;
-        if (totalText) totalText.textContent = total;
-        if (percentText) percentText.textContent = percent + '%';
-        if (progressBar) {
-            progressBar.style.width = percent + '%';
-            progressBar.setAttribute('aria-valuenow', percent);
-        }
-    }
-
-    function updateRowVisuals(row, status) {
-        row.classList.remove('status-packed', 'status-na', 'status-standby', 'status-unchecked');
-        row.classList.add('status-' + status);
-        row.dataset.status = status;
-    }
-
-    function updateItemStatus(itemId, status, row) {
-        fetch('/api/update_item/' + itemId, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ status: status })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                updateRowVisuals(row, status);
-                const categoryCard = row.closest('.card[data-category-id]');
-                if (categoryCard) recalculateCategoryProgress(categoryCard);
-                recalculateGlobalProgress();
+                    updateProgressBar(categorySection);
+                }, 300);
             }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function toggleItem(itemId, isPacked) {
+    updateItem(itemId, { status: isPacked ? 'packed' : 'unchecked' });
+}
+
+function setStatus(itemId, status) {
+    updateItem(itemId, { status: status });
+}
+
+function updateNotes(itemId, notes) {
+    updateItem(itemId, { notes: notes });
+}
+
+function toggleAddForm(categoryId) {
+    const form = document.getElementById(`add-form-${categoryId}`);
+    form.classList.toggle('active');
+    if (form.classList.contains('active')) {
+        form.querySelector('input').focus();
+    }
+}
+
+function addQuickItem(event, categoryId) {
+    event.preventDefault();
+    const input = event.target.querySelector('input');
+    const itemName = input.value.trim();
+    
+    if (!itemName) return;
+    
+    const tripId = window.location.pathname.split('/').pop();
+    
+    fetch('/api/add_trip_item', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({
+            'trip_id': tripId,
+            'category_id': categoryId,
+            'item_name': itemName
         })
-        .catch(err => console.error('Error updating status:', err));
-    }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert('Error al agregar el item: ' + (result.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al agregar el item');
+    });
+    
+    input.value = '';
+}
 
-    function updateItemNotes(itemId, notes) {
-        fetch('/api/update_item/' + itemId, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ notes: notes })
-        });
-    }
+function updateProgressBar(categorySection) {
+    const items = categorySection.querySelectorAll('.item-row');
+    const packed = categorySection.querySelectorAll('.item-row.status-packed');
+    const percentage = items.length > 0 ? (packed.length / items.length * 100) : 0;
+    
+    const progressBar = categorySection.querySelector('.progress-fill');
+    const progressText = categorySection.querySelector('.progress-text');
+    
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `${packed.length}/${items.length}`;
+}
 
-    document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', function() {
-            const row = this.closest('tr.item-row');
-            updateItemStatus(this.dataset.itemId, this.value, row);
+// Búsqueda
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('.item-row');
+    
+    items.forEach(item => {
+        const itemName = item.querySelector('.item-name').textContent.toLowerCase();
+        const notes = item.nextElementSibling?.querySelector('.item-notes')?.value.toLowerCase() || '';
+        
+        if (itemName.includes(searchTerm) || notes.includes(searchTerm)) {
+            item.style.display = 'flex';
+            item.nextElementSibling.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+            item.nextElementSibling.style.display = 'none';
+        }
+    });
+});
+
+// Filtros
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const filter = this.dataset.filter;
+        const items = document.querySelectorAll('.item-row');
+        
+        items.forEach(item => {
+            if (filter === 'all' || item.dataset.status === filter) {
+                item.style.display = 'flex';
+                item.nextElementSibling.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+                item.nextElementSibling.style.display = 'none';
+            }
         });
     });
-
-    let noteTimeouts = {};
-    document.querySelectorAll('.notes-input').forEach(input => {
-        input.addEventListener('input', function() {
-            const itemId = this.dataset.itemId;
-            if (noteTimeouts[itemId]) clearTimeout(noteTimeouts[itemId]);
-            noteTimeouts[itemId] = setTimeout(() => {
-                updateItemNotes(itemId, this.value);
-            }, 500);
-        });
-    });
-
-    const quickForm = document.getElementById('addQuickItemForm');
-    if (quickForm) {
-        quickForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const itemName = document.getElementById('quickItemName').value;
-            const categoryId = document.getElementById('quickItemCategory').value;
-
-            if (!itemName || !categoryId) {
-                alert('{{ t("invalid_item_name") }}');
-                return;
-            }
-
-            fetch('/api/add_trip_item/{{ trip.id }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    item_name: itemName,
-                    category_id: categoryId
-                })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('{{ t("item_added") }}');
-                    location.reload();
-                } else {
-                    alert(data.error || '{{ t("error_adding_item") }}');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('{{ t("error_adding_item") }}');
-            });
-        });
-    }
 });
 </script>
+
 {% endblock %}

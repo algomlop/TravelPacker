@@ -87,6 +87,8 @@ TRANSLATIONS = {
         "add_to_trip": "Add to Trip",
         "error_adding_item": "Error adding item",
         "item_added": "Item added successfully!",
+        "search_items": "Search items...",
+        "all": "All",
     },
     "es": {
         "app_title": "Equipaje de Viaje",
@@ -142,6 +144,8 @@ TRANSLATIONS = {
         "add_to_trip": "Añadir al Viaje",
         "error_adding_item": "Error al añadir el elemento",
         "item_added": "¡Elemento añadido con éxito!",
+        "search_items": "Buscar elementos...",
+        "all": "Todos",
     },
 }
 
@@ -372,6 +376,10 @@ def trip(trip_id):
     trip = Trip.query.filter_by(id=trip_id, user_id=current_user.id).first_or_404()
     trip_items = TripItem.query.filter_by(trip_id=trip.id).all()
 
+    status_order = {'unchecked': 0, 'standby': 1, 'packed': 2, 'na': 3}
+
+    trip_items.sort(key=lambda ti: status_order.get(ti.status, 999))
+
     grouped = {}
     seen_names = set()
 
@@ -428,45 +436,58 @@ def update_item(ti_id):
     db.session.commit()
     return jsonify({"success": True})
 
-@app.route("/api/add_trip_item/<int:trip_id>", methods=["POST"])
+@app.route("/api/add_trip_item", methods=["POST"])
 @login_required
-def add_trip_item(trip_id):
+def add_trip_item():
+    data = request.get_json()
+    trip_id = data.get('trip_id')
+    category_id = data.get('category_id')
+    item_name = data.get('item_name')
+    
+    if not all([trip_id, category_id, item_name]):
+        return jsonify({'success': False, 'error': 'Missing data'}), 400
+    
+    # Verificar que el trip pertenece al usuario
     trip = Trip.query.filter_by(id=trip_id, user_id=current_user.id).first()
     if not trip:
-        return jsonify({"error": "Trip not found"}), 404
-
-    data = request.get_json(silent=True) or {}
-    item_name = clean_text(data.get("item_name", ""))
-    cat_id = data.get("category_id")
-
-    if not item_name:
-        return jsonify({"error": t_key("invalid_item_name")}), 400
-
-    category = None
-    if cat_id and str(cat_id).isdigit():
-        category = Category.query.filter(
-            Category.id == int(cat_id),
-            (Category.user_id.is_(None)) | (Category.user_id == current_user.id),
-        ).first()
-
+        return jsonify({'success': False, 'error': 'Trip not found'}), 404
+    
+    # Verificar que la categoría existe
+    category = Category.query.filter_by(id=category_id).first()
     if not category:
-        return jsonify({"error": t_key("invalid_selection")}), 400
-
-    item = Item(category_id=category.id, name_en=item_name, name_es=item_name, user_id=current_user.id)
-    db.session.add(item)
-    db.session.flush()
-
-    trip_item = TripItem(trip_id=trip.id, item_id=item.id, status="unchecked", notes="")
-    db.session.add(trip_item)
+        return jsonify({'success': False, 'error': 'Category not found'}), 404
+    
+    # Crear el item personalizado
+    new_item = Item(
+        user_id=current_user.id,
+        category_id=category_id,
+        name_es=item_name,
+        name_en=item_name
+    )
+    db.session.add(new_item)
+    db.session.flush()  # Obtener el ID
+    
+    # Crear el TripItem asociado
+    new_trip_item = TripItem(
+        trip_id=trip_id,
+        item_id=new_item.id,
+        status='unchecked',
+        notes=''
+    )
+    db.session.add(new_trip_item)
     db.session.commit()
-
+    
     return jsonify({
-        "success": True,
-        "item_name": get_display_name(item),
-        "category_name": get_display_name(category),
-        "item_id": item.id,
-        "trip_item_id": trip_item.id,
+        'success': True,
+        'item': {
+            'id': new_item.id,
+            'name_es': item_name,
+            'name_en': item_name,
+            'trip_item_id': new_trip_item.id,
+            'status': 'unchecked'
+        }
     })
+
 
 @app.route("/admin", methods=["GET", "POST"])
 @login_required
