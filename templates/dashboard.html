@@ -1,110 +1,243 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row g-4">
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">{{ t('new_trip') }}</h5>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle"></i> {{ t('new_trip') }}</h5>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" action="{{ url_for('dashboard') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="create_trip" value="1">
                     <div class="mb-3">
                         <label class="form-label">{{ t('trip_name') }}</label>
-                        <input type="text" name="trip_name" class="form-control" placeholder="Ej: Summer Ibiza 2026" maxlength="100" required>
+                        <input type="text" name="trip_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ t('select_categories') }}</label>
-                        <div class="row g-2">
-                        {% for cat in categories %}
-                            <div class="col-sm-6 col-lg-4">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}" id="cat_{{ cat.id }}">
-                                    <label class="form-check-label" for="cat_{{ cat.id }}">{{ get_name(cat) }}</label>
+                        <div class="category-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                            {% for cat in categories %}
+                                <div class="form-check" data-category-id="{{ cat.id }}" style="position: relative; margin-left: 10px; margin-bottom: 6px;">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}" id="cat{{ cat.id }}">
+                                    <label class="form-check-label" for="cat{{ cat.id }}">
+                                        {{ get_name(cat) }} <span class="badge bg-secondary">{{ cat.items|length }}</span>
+                                    </label>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success">{{ t('create_trip') }}</button>
+                    <button type="submit" name="create_trip" class="btn btn-primary w-100">
+                        <i class="fas fa-plane-departure"></i> {{ t('create_trip') }}
+                    </button>
                 </form>
             </div>
         </div>
 
-        <div class="d-flex align-items-end justify-content-between mb-3">
-            <h4 class="mb-0">{{ t('my_trips') }}</h4>
-            <span class="text-muted small">{{ trips|length }} {{ t('my_trips')|lower }}</span>
-        </div>
-
-        <div class="list-group shadow-sm mb-5">
-            {% for trip in trips %}
-            <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
-                <div>
-                    <strong>{{ trip.name }}</strong>
-                    <div class="small text-muted">{{ trip.created_at.strftime('%Y-%m-%d') }}</div>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('trip', trip_id=trip.id) }}" class="btn btn-sm btn-primary">{{ t('go_to_trip') }}</a>
-                    <form method="POST" action="{{ url_for('delete_trip', trip_id=trip.id) }}" class="d-inline">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{{ t('delete_confirm') }}');">{{ t('delete') }}</button>
-                    </form>
-                </div>
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-edit"></i> {{ t('custom_items') }}</h5>
             </div>
-            {% else %}
-            <div class="list-group-item text-muted">
-                <div class="fw-semibold">{{ t('no_trips') }}</div>
-                <div>{{ t('dashboard_empty') }}</div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white"><h5 class="mb-0">{{ t('custom_items') }}</h5></div>
             <div class="card-body">
-                <form method="POST" class="mb-3">
+                <form method="POST" action="{{ url_for('dashboard') }}" class="mb-3">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="add_category" value="1">
-                    <label class="small form-label">{{ t('add_category') }}</label>
-                    <div class="input-group">
-                        <input type="text" name="cat_name" class="form-control form-control-sm" maxlength="100" required>
-                        <button class="btn btn-sm btn-outline-primary" type="submit">+</button>
+                    <div class="mb-2">
+                        <input type="text" name="cat_name" class="form-control" placeholder="{{ t('category') }}">
                     </div>
+                    <button type="submit" name="add_category" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-folder-plus"></i> {{ t('add_category') }}
+                    </button>
                 </form>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="add_item" value="1">
-                    <label class="small form-label">{{ t('add_item') }}</label>
-                    <select name="category_id" class="form-select form-select-sm mb-2" required>
-                        {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="input-group">
-                        <input type="text" name="item_name" class="form-control form-control-sm" maxlength="100" required>
-                        <button class="btn btn-sm btn-outline-primary" type="submit">+</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-white"><h5 class="mb-0">{{ t('custom_items') }}</h5></div>
-            <div class="card-body">
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-2">
+                        <select name="category_id" class="form-select">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="item_name" class="form-control" placeholder="{{ t('item_name') }}">
+                    </div>
+                    <button type="submit" name="add_item" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="fas fa-plus"></i> {{ t('add_item') }}
+                    </button>
+                </form>
+
+                <hr>
+                <h6>{{ t('custom_items') }}</h6>
                 {% if user_items %}
-                    <ul class="list-unstyled small mb-0">
+                    <ul class="list-unstyled">
                         {% for item in user_items %}
-                        <li class="mb-1">- {{ item.name_en }} <span class="text-muted">({{ get_name(item.category) }})</span></li>
+                            <li><small>- {{ item.name_en }} ({{ get_name(item.category) }})</small></li>
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <div class="text-muted">{{ t('no_items') }}</div>
+                    <p class="text-muted small">{{ t('no_items') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-list"></i> {{ t('my_trips') }} ({{ trips|length }})</h4>
+            </div>
+            <div class="card-body">
+                {% if trips %}
+                    {% for trip in trips %}
+                        {% set total = trip.items|length %}
+                        {% set packed = trip.items|selectattr('status', 'equalto', 'packed')|list|length %}
+                        {% set na = trip.items|selectattr('status', 'equalto', 'na')|list|length %}
+                        {% set standby = trip.items|selectattr('status', 'equalto', 'standby')|list|length %}
+                        {% set unchecked = trip.items|selectattr('status', 'equalto', 'unchecked')|list|length %}
+                        {% set percent = (packed / total * 100)|round|int if total > 0 else 0 %}
+                        
+                        <div class="card mb-3 trip-card" onclick="window.location='{{ url_for('trip', trip_id=trip.id) }}'">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-plane"></i> 
+                                            <a href="{{ url_for('trip', trip_id=trip.id) }}" class="text-decoration-none text-dark">
+                                                {{ trip.name }}
+                                            </a>
+                                        </h5>
+                                        <p class="text-muted mb-2">
+                                            <i class="fas fa-calendar"></i> {{ trip.created_at.strftime('%Y-%m-%d') }}
+                                        </p>
+                                        <div class="progress mb-2">
+                                            <div class="progress-bar bg-success" style="width: {{ percent }}%">
+                                                {{ percent }}% {{ t('progress_complete') }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-danger"><i class="fas fa-box"></i> {{ unchecked }}</span>
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> {{ packed }}</span>
+                                            <span class="badge bg-warning"><i class="fas fa-clock"></i> {{ standby }}</span>
+                                            <span class="badge bg-secondary"><i class="fas fa-ban"></i> {{ na }}</span>
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('delete_trip', trip_id=trip.id) }}" class="ms-2" onclick="event.stopPropagation();">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('{{ t('delete_confirm') }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-suitcase fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">{{ t('no_trips') }}</p>
+                        <p class="text-muted small">{{ t('dashboard_empty') }}</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checks = document.querySelectorAll('.form-check[data-category-id]');
+    let activeTooltip = null;
+    let hideTimeout = null;
+    let currentFetch = null;
+
+    function removeTooltip() {
+        if (activeTooltip) {
+            activeTooltip.classList.remove('visible');
+            setTimeout(() => {
+                if (activeTooltip && activeTooltip.parentNode) {
+                    activeTooltip.parentNode.removeChild(activeTooltip);
+                }
+                activeTooltip = null;
+            }, 150);
+        }
+    }
+
+    function showTooltip(target, data) {
+        removeTooltip();
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'category-tooltip';
+
+        const maxShow = 8;
+        const itemsToShow = data.items.slice(0, maxShow);
+        const remaining = data.items.length - itemsToShow.length;
+
+        tooltip.innerHTML = `
+            <div class="tt-title">${data.category_name}</div>
+            <div class="tt-meta">${data.total} {{ t('items_label') }}</div>
+            <div class="tt-list">
+                ${itemsToShow.map(i => `• ${i}`).join('<br>')}
+            </div>
+            ${remaining > 0 ? `<div class="tt-more">... {{ t('and') }} ${remaining} {{ t('more') }}</div>` : ''}
+        `;
+
+        document.body.appendChild(tooltip);
+
+        const rect = target.getBoundingClientRect();
+        const scrollY = window.scrollY || window.pageYOffset;
+        const scrollX = window.scrollX || window.pageXOffset;
+
+        let left = rect.left + scrollX + (rect.width / 2) - (tooltip.offsetWidth / 2);
+        let top = rect.bottom + scrollY + 8;
+
+        if (left < 10) left = 10;
+        if (left + tooltip.offsetWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltip.offsetWidth - 10;
+        }
+
+        if (top + tooltip.offsetHeight > window.innerHeight + scrollY - 10) {
+            top = rect.top + scrollY - tooltip.offsetHeight - 8;
+        }
+
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        activeTooltip = tooltip;
+
+        requestAnimationFrame(() => tooltip.classList.add('visible'));
+    }
+
+    checks.forEach(check => {
+        const catId = check.dataset.categoryId;
+
+        check.addEventListener('mouseenter', function() {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+            if (currentFetch) {
+                try { currentFetch.abort && currentFetch.abort(); } catch(e) {}
+            }
+
+            const controller = new AbortController();
+            currentFetch = controller;
+
+            fetch(`/api/category/${catId}/preview`, { signal: controller.signal })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.items && data.items.length > 0) {
+                        showTooltip(check, data);
+                    }
+                })
+                .catch(err => {
+                    if (err.name !== 'AbortError') console.error(err);
+                });
+        });
+
+        check.addEventListener('mouseleave', function() {
+            hideTimeout = setTimeout(removeTooltip, 150);
+        });
+    });
+});
+</script>
 {% endblock %}

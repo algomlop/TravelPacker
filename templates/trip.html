@@ -1,115 +1,291 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 gap-3">
-    <h2 class="mb-0">{{ trip.name }}</h2>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">← {{ t('dashboard') }}</a>
+<div class="mb-4">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left"></i> {{ t('dashboard') }}
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0"><i class="fas fa-plane"></i> {{ trip.name }}</h3>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-plus-circle"></i> {{ t('add_quick_item') }}</h5>
+    </div>
+    <div class="card-body">
+        <form id="addQuickItemForm">
+            <div class="row">
+                <div class="col-md-5">
+                    <input type="text" id="quickItemName" class="form-control" placeholder="{{ t('item_name') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <select id="quickItemCategory" class="form-select" required>
+                        <option value="">{{ t('select_category') }}</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-plus"></i> {{ t('add_to_trip') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 {% if grouped %}
-    {% for cat, items in grouped.items() %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white fw-bold">{{ get_name(cat) }}</div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-borderless mb-0 align-middle trip-table">
-                    <tbody>
-                        {% for ti in items %}
-                        <tr class="border-bottom" id="row-{{ ti.id }}">
-                            <td style="width: 30%">{{ get_name(ti.item) }}</td>
-                            <td style="width: 25%">
-                                <select class="form-select form-select-sm status-select" data-id="{{ ti.id }}" aria-label="{{ t('category') }}">
-                                    <option value="unchecked" {% if ti.status == 'unchecked' %}selected{% endif %}>{{ t('status_unchecked') }}</option>
-                                    <option value="packed" {% if ti.status == 'packed' %}selected{% endif %}>{{ t('status_packed') }}</option>
-                                    <option value="na" {% if ti.status == 'na' %}selected{% endif %}>{{ t('status_na') }}</option>
-                                    <option value="standby" {% if ti.status == 'standby' %}selected{% endif %}>{{ t('status_standby') }}</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control form-control-sm notes-input" data-id="{{ ti.id }}" placeholder="{{ t('notes') }}..." value="{{ ti.notes|e }}" maxlength="255">
-                            </td>
-                            <td style="width: 12%">
-                                <span id="toast-{{ ti.id }}" class="saved-toast text-muted" aria-live="polite"></span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    {% set global_total = [] %}
+    {% set global_packed = [] %}
+    
+        {% for cat, items in grouped.items() %}
+        {% set cat_total = items|length %}
+        {% set cat_packed = items|selectattr('status', 'equalto', 'packed')|list|length %}
+        {% set cat_percent = (cat_packed / cat_total * 100)|round|int if cat_total > 0 else 0 %}
+        
+        {% if global_total.append(cat_total) %}{% endif %}
+        {% if global_packed.append(cat_packed) %}{% endif %}
+        
+        <div class="card mb-4" data-category-id="{{ cat.id }}">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-folder"></i> {{ get_name(cat) }}
+                    <span class="badge bg-secondary float-end">
+                        <span class="cat-packed-count">{{ cat_packed }}</span> / 
+                        <span class="cat-total-count">{{ cat_total }}</span> {{ t('items_label') }}
+                    </span>
+                </h5>
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-success cat-progress" 
+                         role="progressbar" 
+                         style="width: {{ cat_percent }}%" 
+                         aria-valuenow="{{ cat_percent }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        <span class="cat-percent-text">{{ cat_percent }}%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ t('item_name') }}</th>
+                                <th style="width: 200px;">{{ t('status_unchecked') }}</th>
+                                <th style="width: 250px;">{{ t('notes') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ti in items %}
+                                <tr class="item-row status-{{ ti.status }}" 
+                                    data-item-id="{{ ti.id }}" 
+                                    data-status="{{ ti.status }}">
+                                    <td>{{ get_name(ti.item) }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm status-select" data-item-id="{{ ti.id }}">
+                                            <option value="unchecked" {% if ti.status == 'unchecked' %}selected{% endif %}>{{ t('status_unchecked') }}</option>
+                                            <option value="packed" {% if ti.status == 'packed' %}selected{% endif %}>{{ t('status_packed') }}</option>
+                                            <option value="na" {% if ti.status == 'na' %}selected{% endif %}>{{ t('status_na') }}</option>
+                                            <option value="standby" {% if ti.status == 'standby' %}selected{% endif %}>{{ t('status_standby') }}</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm notes-input" 
+                                               value="{{ ti.notes }}" data-item-id="{{ ti.id }}" 
+                                               placeholder="{{ t('notes') }}">
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
     {% endfor %}
+
+        {% set total_all = global_total|sum %}
+    {% set packed_all = global_packed|sum %}
+    {% set global_percent = (packed_all / total_all * 100)|round|int if total_all > 0 else 0 %}
+    
+    <div class="card bg-light" id="globalSummary">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-chart-pie"></i> {{ t('global_summary') }}</h5>
+            <div class="progress mb-3" style="height: 30px;">
+                <div class="progress-bar bg-success progress-bar-striped global-progress" 
+                     role="progressbar" 
+                     style="width: {{ global_percent }}%" 
+                     aria-valuenow="{{ global_percent }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    <strong><span class="global-percent-text">{{ global_percent }}%</span></strong>
+                </div>
+            </div>
+            <p class="mb-0">
+                <strong><span class="global-packed-text">{{ packed_all }}</span></strong> / 
+                <strong><span class="global-total-text">{{ total_all }}</span></strong> {{ t('items_label') }} 
+                {{ 'packed' if lang == 'en' else 'empacados' }}
+            </p>
+        </div>
+    </div>
 {% else %}
-    <div class="alert alert-info">{{ t('no_trips') }}</div>
+    <div class="alert alert-info fade show">
+        <i class="fas fa-info-circle"></i> {{ t('no_trips') }}
+    </div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const csrfToken = window.CSRF_TOKEN;
-    const timers = new Map();
-    const savedLabel = {{ t('saved')|tojson }};
-    const failedLabel = {{ t('save_failed')|tojson }};
+{{ super() }} <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token() }}';
 
-    const setToast = (id, message, isError = false) => {
-        const toast = document.getElementById(`toast-${id}`);
-        if (!toast) return;
-        toast.classList.toggle('text-danger', isError);
-        toast.classList.toggle('text-muted', !isError);
-        toast.textContent = message;
-        toast.style.display = 'inline';
-        clearTimeout(toast._hideTimer);
-        toast._hideTimer = setTimeout(() => {
-            toast.style.display = 'none';
-        }, 1800);
-    };
+    function recalculateCategoryProgress(categoryCard) {
+        const rows = categoryCard.querySelectorAll('tr.item-row');
+        const total = rows.length;
+        let packed = 0;
+        rows.forEach(row => {
+            if (row.dataset.status === 'packed') packed++;
+        });
+        const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
 
-    const setRowSaving = (id, saving) => {
-        const row = document.getElementById(`row-${id}`);
-        if (row) row.classList.toggle('item-saving', saving);
-    };
+        const packedCount = categoryCard.querySelector('.cat-packed-count');
+        const totalCount = categoryCard.querySelector('.cat-total-count');
+        const percentText = categoryCard.querySelector('.cat-percent-text');
+        const progressBar = categoryCard.querySelector('.cat-progress');
 
-    const updateItem = async (id, field, value) => {
-        setRowSaving(id, true);
-        try {
-            const response = await fetch(`/api/update_item/${id}`, {
+        if (packedCount) packedCount.textContent = packed;
+        if (totalCount) totalCount.textContent = total;
+        if (percentText) percentText.textContent = percent + '%';
+        if (progressBar) {
+            progressBar.style.width = percent + '%';
+            progressBar.setAttribute('aria-valuenow', percent);
+        }
+    }
+
+    function recalculateGlobalProgress() {
+        const allRows = document.querySelectorAll('tr.item-row');
+        const total = allRows.length;
+        let packed = 0;
+        allRows.forEach(row => {
+            if (row.dataset.status === 'packed') packed++;
+        });
+        const percent = total > 0 ? Math.round((packed / total) * 100) : 0;
+
+        const packedText = document.querySelector('.global-packed-text');
+        const totalText = document.querySelector('.global-total-text');
+        const percentText = document.querySelector('.global-percent-text');
+        const progressBar = document.querySelector('.global-progress');
+
+        if (packedText) packedText.textContent = packed;
+        if (totalText) totalText.textContent = total;
+        if (percentText) percentText.textContent = percent + '%';
+        if (progressBar) {
+            progressBar.style.width = percent + '%';
+            progressBar.setAttribute('aria-valuenow', percent);
+        }
+    }
+
+    function updateRowVisuals(row, status) {
+        row.classList.remove('status-packed', 'status-na', 'status-standby', 'status-unchecked');
+        row.classList.add('status-' + status);
+        row.dataset.status = status;
+    }
+
+    function updateItemStatus(itemId, status, row) {
+        fetch('/api/update_item/' + itemId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                updateRowVisuals(row, status);
+                const categoryCard = row.closest('.card[data-category-id]');
+                if (categoryCard) recalculateCategoryProgress(categoryCard);
+                recalculateGlobalProgress();
+            }
+        })
+        .catch(err => console.error('Error updating status:', err));
+    }
+
+    function updateItemNotes(itemId, notes) {
+        fetch('/api/update_item/' + itemId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ notes: notes })
+        });
+    }
+
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const row = this.closest('tr.item-row');
+            updateItemStatus(this.dataset.itemId, this.value, row);
+        });
+    });
+
+    let noteTimeouts = {};
+    document.querySelectorAll('.notes-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const itemId = this.dataset.itemId;
+            if (noteTimeouts[itemId]) clearTimeout(noteTimeouts[itemId]);
+            noteTimeouts[itemId] = setTimeout(() => {
+                updateItemNotes(itemId, this.value);
+            }, 500);
+        });
+    });
+
+    const quickForm = document.getElementById('addQuickItemForm');
+    if (quickForm) {
+        quickForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const itemName = document.getElementById('quickItemName').value;
+            const categoryId = document.getElementById('quickItemCategory').value;
+
+            if (!itemName || !categoryId) {
+                alert('{{ t("invalid_item_name") }}');
+                return;
+            }
+
+            fetch('/api/add_trip_item/{{ trip.id }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
+                    'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ [field]: value }),
+                body: JSON.stringify({
+                    item_name: itemName,
+                    category_id: categoryId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('{{ t("item_added") }}');
+                    location.reload();
+                } else {
+                    alert(data.error || '{{ t("error_adding_item") }}');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('{{ t("error_adding_item") }}');
             });
-
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || failedLabel);
-            }
-
-            setToast(id, `✓ ${savedLabel}`, false);
-        } catch (error) {
-            setToast(id, `✕ ${error.message || failedLabel}`, true);
-        } finally {
-            setRowSaving(id, false);
-        }
-    };
-
-    document.querySelectorAll('.status-select').forEach(el => {
-        el.addEventListener('change', (event) => {
-            updateItem(event.target.dataset.id, 'status', event.target.value);
         });
-    });
-
-    document.querySelectorAll('.notes-input').forEach(el => {
-        el.addEventListener('input', (event) => {
-            const id = event.target.dataset.id;
-            const key = `${id}:notes`;
-            clearTimeout(timers.get(key));
-            timers.set(key, setTimeout(() => {
-                updateItem(id, 'notes', event.target.value);
-            }, 450));
-        });
-    });
+    }
 });
 </script>
 {% endblock %}

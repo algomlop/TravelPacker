@@ -16,7 +16,6 @@ from flask_login import (
 
 app = Flask(__name__)
 
-# Keep this configurable for deployments.
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", token_urlsafe(32))
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -41,7 +40,7 @@ TRANSLATIONS = {
         "login_btn": "Enter",
         "guest_btn": "Continue as Guest",
         "logout": "Logout",
-        "privacy_notice": "Notice: Do not enter confidential information. No passwords are required. Aliases are public to the system.",
+        "privacy_notice": "Notice: Do not enter confidential information. No passwords are required. Aliases are public.",
         "dashboard": "Dashboard",
         "admin_panel": "Admin Panel",
         "my_trips": "My Trips",
@@ -74,9 +73,20 @@ TRANSLATIONS = {
         "no_items": "No custom items yet.",
         "dashboard_empty": "Create your first trip to start packing.",
         "save_failed": "Could not save changes.",
-        "trip_deleted": "Trip deleted.",
+        "trip_deleted": "Trip delete.",
         "delete_confirm": "Are you sure?",
         "language": "Language",
+        "progress_complete": "complete",
+        "global_summary": "Global Summary",
+        "items_label": "items",
+        "and": "and",
+        "more": "more",
+        "add_quick_item": "Add Quick Item",
+        "item_name": "Item Name",
+        "select_category": "Select Category",
+        "add_to_trip": "Add to Trip",
+        "error_adding_item": "Error adding item",
+        "item_added": "Item added successfully!",
     },
     "es": {
         "app_title": "Equipaje de Viaje",
@@ -85,7 +95,7 @@ TRANSLATIONS = {
         "login_btn": "Entrar",
         "guest_btn": "Continuar como Invitado",
         "logout": "Salir",
-        "privacy_notice": "Aviso: No introduzcas información confidencial. No se requieren contraseñas. Los alias son visibles para el sistema.",
+        "privacy_notice": "Aviso: No introduzcas información confidencial. No se requieren contraseñas. Los alias son visibles.",
         "dashboard": "Panel Principal",
         "admin_panel": "Panel de Admin",
         "my_trips": "Mis Viajes",
@@ -121,6 +131,17 @@ TRANSLATIONS = {
         "trip_deleted": "Viaje borrado.",
         "delete_confirm": "¿Seguro?",
         "language": "Idioma",
+        "progress_complete": "completado",
+        "global_summary": "Resumen Global",
+        "items_label": "elementos",
+        "and": "y",
+        "more": "más",
+        "add_quick_item": "Añadir Elemento Rápido",
+        "item_name": "Nombre del Elemento",
+        "select_category": "Seleccionar Categoría",
+        "add_to_trip": "Añadir al Viaje",
+        "error_adding_item": "Error al añadir el elemento",
+        "item_added": "¡Elemento añadido con éxito!",
     },
 }
 
@@ -147,7 +168,6 @@ def protect_post_requests():
     if request.method != "POST":
         return
 
-    # Exempt nothing here; all POST routes in the app include a token.
     submitted = request.form.get("csrf_token") or request.headers.get("X-CSRFToken") or request.headers.get("X-CSRF-Token")
     expected = session.get("_csrf_token")
     if not expected or not submitted or submitted != expected:
@@ -156,7 +176,6 @@ def protect_post_requests():
         flash(t_key("security_error"), "danger")
         return redirect(request.referrer or url_for("index"))
 
-# --- MODELS ---
 class User(UserMixin, db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
@@ -223,7 +242,6 @@ def flash_errors(errors):
     for error in errors:
         flash(error, "danger")
 
-# --- ROUTES ---
 @app.route("/", methods=["GET", "POST"])
 def index():
     if current_user.is_authenticated:
@@ -289,7 +307,7 @@ def dashboard():
             else:
                 new_trip = Trip(user_id=current_user.id, name=name)
                 db.session.add(new_trip)
-                db.session.flush()  # get trip id without committing yet
+                db.session.flush()
 
                 category_ids = [c.id for c in visible_categories]
                 items = Item.query.filter(
@@ -357,7 +375,9 @@ def trip(trip_id):
         cat = ti.item.category
         grouped.setdefault(cat, []).append(ti)
 
-    return render_template("trip.html", trip=trip, grouped=grouped, get_name=get_display_name)
+    categories = Category.query.filter((Category.user_id.is_(None)) | (Category.user_id == current_user.id)).order_by(Category.name_en.asc()).all()
+
+    return render_template("trip.html", trip=trip, grouped=grouped, categories=categories, get_name=get_display_name)
 
 @app.route("/trip/<int:trip_id>/delete", methods=["POST"])
 @login_required
@@ -365,7 +385,7 @@ def delete_trip(trip_id):
     trip = Trip.query.filter_by(id=trip_id, user_id=current_user.id).first_or_404()
     db.session.delete(trip)
     db.session.commit()
-    flash(t_key("delete"), "success")
+    flash(t_key("trip_deleted"), "success")
     return redirect(url_for("dashboard"))
 
 @app.route("/api/update_item/<int:ti_id>", methods=["POST"])
@@ -396,6 +416,46 @@ def update_item(ti_id):
 
     db.session.commit()
     return jsonify({"success": True})
+
+@app.route("/api/add_trip_item/<int:trip_id>", methods=["POST"])
+@login_required
+def add_trip_item(trip_id):
+    trip = Trip.query.filter_by(id=trip_id, user_id=current_user.id).first()
+    if not trip:
+        return jsonify({"error": "Trip not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    item_name = clean_text(data.get("item_name", ""))
+    cat_id = data.get("category_id")
+
+    if not item_name:
+        return jsonify({"error": t_key("invalid_item_name")}), 400
+
+    category = None
+    if cat_id and str(cat_id).isdigit():
+        category = Category.query.filter(
+            Category.id == int(cat_id),
+            (Category.user_id.is_(None)) | (Category.user_id == current_user.id),
+        ).first()
+
+    if not category:
+        return jsonify({"error": t_key("invalid_selection")}), 400
+
+    item = Item(category_id=category.id, name_en=item_name, name_es=item_name, user_id=current_user.id)
+    db.session.add(item)
+    db.session.flush()
+
+    trip_item = TripItem(trip_id=trip.id, item_id=item.id, status="unchecked", notes="")
+    db.session.add(trip_item)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "item_name": get_display_name(item),
+        "category_name": get_display_name(category),
+        "item_id": item.id,
+        "trip_item_id": trip_item.id,
+    })
 
 @app.route("/admin", methods=["GET", "POST"])
 @login_required
@@ -435,12 +495,10 @@ def admin():
     items = Item.query.filter_by(user_id=None).order_by(Item.name_en.asc()).all()
     return render_template("admin.html", categories=categories, items=items)
 
-# --- DB SEED & CLEANUP ---
 def clean_old_guests():
     yesterday = datetime.utcnow() - timedelta(days=1)
     old_guests = User.query.filter(User.is_guest.is_(True), User.created_at < yesterday).all()
     for guest in old_guests:
-        # Delete owned data explicitly so older SQLite schemas do not leave orphans.
         for trip in Trip.query.filter_by(user_id=guest.id).all():
             db.session.delete(trip)
         for item in Item.query.filter_by(user_id=guest.id).all():
@@ -480,6 +538,30 @@ def seed_db():
         ]
         db.session.add_all(items)
         db.session.commit()
+
+@app.route("/api/category/<int:cat_id>/preview")
+@login_required
+def category_preview(cat_id):
+    category = Category.query.filter(
+        Category.id == cat_id,
+        (Category.user_id.is_(None)) | (Category.user_id == current_user.id),
+    ).first()
+
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+
+    items = Item.query.filter(
+        Item.category_id == category.id,
+        (Item.user_id.is_(None)) | (Item.user_id == current_user.id),
+    ).order_by(Item.name_en.asc()).all()
+
+    item_names = [get_display_name(item) for item in items]
+
+    return jsonify({
+        "category_name": get_display_name(category),
+        "items": item_names,
+        "total": len(item_names),
+    })
 
 if __name__ == "__main__":
     with app.app_context():
