@@ -17,10 +17,10 @@ A simple, functional web application to manage your travel checklists and ensure
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-3. **Install dependencies:
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
-4. **Run the application:
+4. **Run the application:**
     ```bash
     python app.py
 
@@ -32,10 +32,3 @@ A simple, functional web application to manage your travel checklists and ensure
 
 To access the Admin panel and manage the default (global) items and categories, simply log in with the alias admin.
 code Code
-
-
-## Security/UX improvements applied
-- CSRF protection on all POST routes.
-- Safer alias validation and configurable admin alias via ADMIN_ALIAS.
-- POST-based logout, guest access, and trip deletion.
-- Better error handling and responsive trip editor.
