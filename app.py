@@ -514,30 +514,6 @@ def seed_db():
         db.session.add(User(alias=ADMIN_ALIAS, is_admin=True))
         db.session.commit()
 
-    if not Category.query.first():
-        cats = [
-            Category(name_en="Essentials", name_es="Esenciales"),
-            Category(name_en="Summer", name_es="Verano"),
-            Category(name_en="Winter", name_es="Invierno"),
-            Category(name_en="Dog", name_es="Perro"),
-        ]
-        db.session.add_all(cats)
-        db.session.commit()
-
-        items = [
-            Item(category_id=cats[0].id, name_en="Passport", name_es="Pasaporte"),
-            Item(category_id=cats[0].id, name_en="Phone Charger", name_es="Cargador de móvil"),
-            Item(category_id=cats[1].id, name_en="Beach Towel", name_es="Toalla de playa"),
-            Item(category_id=cats[1].id, name_en="Sunscreen", name_es="Protector solar"),
-            Item(category_id=cats[1].id, name_en="Umbrella", name_es="Sombrilla"),
-            Item(category_id=cats[2].id, name_en="Heavy Coat", name_es="Abrigo"),
-            Item(category_id=cats[2].id, name_en="Gloves", name_es="Guantes"),
-            Item(category_id=cats[3].id, name_en="Health Card", name_es="Cartilla sanitaria"),
-            Item(category_id=cats[3].id, name_en="Muzzle", name_es="Bozal"),
-            Item(category_id=cats[3].id, name_en="Leash", name_es="Correa"),
-        ]
-        db.session.add_all(items)
-        db.session.commit()
 
 @app.route("/api/category/<int:cat_id>/preview")
 @login_required
