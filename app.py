@@ -183,13 +183,14 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     is_guest = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
+    
 class Category(db.Model):
     __tablename__ = "category"
     id = db.Column(db.Integer, primary_key=True)
     name_en = db.Column(db.String(MAX_NAME_LEN), nullable=False)
     name_es = db.Column(db.String(MAX_NAME_LEN), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     items = db.relationship("Item", backref="category", lazy="selectin", cascade="all, delete-orphan")
 
 class Item(db.Model):
@@ -199,6 +200,7 @@ class Item(db.Model):
     name_en = db.Column(db.String(MAX_NAME_LEN), nullable=False)
     name_es = db.Column(db.String(MAX_NAME_LEN), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True, index=True)
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     trip_items = db.relationship("TripItem", backref="item", lazy="selectin", cascade="all, delete-orphan")
 
 class Trip(db.Model):
@@ -297,7 +299,7 @@ def dashboard():
             selected_cat_ids = request.form.getlist("categories")
             visible_categories = Category.query.filter(
                 Category.id.in_(selected_cat_ids),
-                (Category.user_id.is_(None)) | (Category.user_id == current_user.id),
+                ((Category.user_id.is_(None)) & (Category.is_deleted == False)) | (Category.user_id == current_user.id),
             ).all()
 
             if not name:
@@ -351,7 +353,7 @@ def dashboard():
                 flash(t_key("saved"), "success")
 
     trips = Trip.query.filter_by(user_id=current_user.id).order_by(Trip.created_at.desc()).all()
-    categories = Category.query.filter((Category.user_id.is_(None)) | (Category.user_id == current_user.id)).order_by(Category.name_en.asc()).all()
+    categories = Category.query.filter(((Category.user_id.is_(None)) & (Category.is_deleted == False)) | (Category.user_id == current_user.id)).order_by(Category.name_en.asc()).all()
     user_categories = Category.query.filter_by(user_id=current_user.id).order_by(Category.name_en.asc()).all()
     user_items = Item.query.filter_by(user_id=current_user.id).order_by(Item.name_en.asc()).all()
 
@@ -371,11 +373,20 @@ def trip(trip_id):
     trip_items = TripItem.query.filter_by(trip_id=trip.id).all()
 
     grouped = {}
+    seen_names = set()
+
     for ti in trip_items:
+        name_key = (ti.item.name_en.strip().lower(), ti.item.name_es.strip().lower())
+        if name_key in seen_names:
+            continue
+        seen_names.add(name_key)
+
         cat = ti.item.category
         grouped.setdefault(cat, []).append(ti)
 
-    categories = Category.query.filter((Category.user_id.is_(None)) | (Category.user_id == current_user.id)).order_by(Category.name_en.asc()).all()
+    categories = Category.query.filter(
+        ((Category.user_id.is_(None)) & (Category.is_deleted == False)) | (Category.user_id == current_user.id)
+    ).order_by(Category.name_en.asc()).all()
 
     return render_template("trip.html", trip=trip, grouped=grouped, categories=categories, get_name=get_display_name)
 
@@ -474,13 +485,14 @@ def admin():
                 db.session.add(Category(name_en=name_en, name_es=name_es))
                 db.session.commit()
                 flash(t_key("saved"), "success")
+                
         elif "add_item" in request.form:
             cat_id = request.form.get("category_id")
             name_en = clean_text(request.form.get("name_en", ""))
             name_es = clean_text(request.form.get("name_es", ""))
             category = None
             if cat_id and cat_id.isdigit():
-                category = Category.query.filter_by(id=int(cat_id), user_id=None).first()
+                category = Category.query.filter_by(id=int(cat_id), user_id=None, is_deleted=False).first()
 
             if not category:
                 flash(t_key("invalid_selection"), "danger")
@@ -491,8 +503,28 @@ def admin():
                 db.session.commit()
                 flash(t_key("saved"), "success")
 
-    categories = Category.query.filter_by(user_id=None).order_by(Category.name_en.asc()).all()
-    items = Item.query.filter_by(user_id=None).order_by(Item.name_en.asc()).all()
+
+        elif "delete_category" in request.form:
+            cat_id = request.form.get("category_id")
+            if cat_id and cat_id.isdigit():
+                cat = Category.query.filter_by(id=int(cat_id), user_id=None).first()
+                if cat:
+                    cat.is_deleted = True
+                    Item.query.filter_by(category_id=cat.id, user_id=None).update({"is_deleted": True})
+                    db.session.commit()
+                    flash(t_key("saved"), "success")
+
+        elif "delete_item" in request.form:
+            item_id = request.form.get("item_id")
+            if item_id and item_id.isdigit():
+                item = Item.query.filter_by(id=int(item_id), user_id=None).first()
+                if item:
+                    item.is_deleted = True
+                    db.session.commit()
+                    flash(t_key("saved"), "success")
+
+    categories = Category.query.filter_by(user_id=None, is_deleted=False).order_by(Category.name_en.asc()).all()
+    items = Item.query.filter_by(user_id=None, is_deleted=False).order_by(Item.name_en.asc()).all()
     return render_template("admin.html", categories=categories, items=items)
 
 def clean_old_guests():
