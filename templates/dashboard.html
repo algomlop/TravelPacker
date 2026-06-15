@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{{ t('new_trip') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="create_trip" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('trip_name') }}</label>
+                        <input type="text" name="trip_name" class="form-control" placeholder="Ej: Summer Ibiza 2026" maxlength="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('select_categories') }}</label>
+                        <div class="row g-2">
+                        {% for cat in categories %}
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}" id="cat_{{ cat.id }}">
+                                    <label class="form-check-label" for="cat_{{ cat.id }}">{{ get_name(cat) }}</label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">{{ t('create_trip') }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-end justify-content-between mb-3">
+            <h4 class="mb-0">{{ t('my_trips') }}</h4>
+            <span class="text-muted small">{{ trips|length }} {{ t('my_trips')|lower }}</span>
+        </div>
+
+        <div class="list-group shadow-sm mb-5">
+            {% for trip in trips %}
+            <div class="list-group-item d-flex justify-content-between align-items-center gap-3">
+                <div>
+                    <strong>{{ trip.name }}</strong>
+                    <div class="small text-muted">{{ trip.created_at.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('trip', trip_id=trip.id) }}" class="btn btn-sm btn-primary">{{ t('go_to_trip') }}</a>
+                    <form method="POST" action="{{ url_for('delete_trip', trip_id=trip.id) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('{{ t('delete_confirm') }}');">{{ t('delete') }}</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="list-group-item text-muted">
+                <div class="fw-semibold">{{ t('no_trips') }}</div>
+                <div>{{ t('dashboard_empty') }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white"><h5 class="mb-0">{{ t('custom_items') }}</h5></div>
+            <div class="card-body">
+                <form method="POST" class="mb-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="add_category" value="1">
+                    <label class="small form-label">{{ t('add_category') }}</label>
+                    <div class="input-group">
+                        <input type="text" name="cat_name" class="form-control form-control-sm" maxlength="100" required>
+                        <button class="btn btn-sm btn-outline-primary" type="submit">+</button>
+                    </div>
+                </form>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="add_item" value="1">
+                    <label class="small form-label">{{ t('add_item') }}</label>
+                    <select name="category_id" class="form-select form-select-sm mb-2" required>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="input-group">
+                        <input type="text" name="item_name" class="form-control form-control-sm" maxlength="100" required>
+                        <button class="btn btn-sm btn-outline-primary" type="submit">+</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white"><h5 class="mb-0">{{ t('custom_items') }}</h5></div>
+            <div class="card-body">
+                {% if user_items %}
+                    <ul class="list-unstyled small mb-0">
+                        {% for item in user_items %}
+                        <li class="mb-1">- {{ item.name_en }} <span class="text-muted">({{ get_name(item.category) }})</span></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">{{ t('no_items') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

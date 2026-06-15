@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body p-4 text-center">
+                <h3 class="mb-4">{{ t('login_title') }}</h3>
+                <form method="POST" action="{{ url_for('index') }}" class="text-start">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('alias_label') }}</label>
+                        <input type="text" name="alias" class="form-control text-center" minlength="3" maxlength="32" autocomplete="off" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">{{ t('login_btn') }}</button>
+                </form>
+                <hr>
+                <form method="POST" action="{{ url_for('guest') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary w-100">{{ t('guest_btn') }}</button>
+                </form>
+                <div class="mt-4 text-muted small">
+                    {{ t('privacy_notice') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

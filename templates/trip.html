@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+    <h2 class="mb-0">{{ trip.name }}</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">← {{ t('dashboard') }}</a>
+</div>
+
+{% if grouped %}
+    {% for cat, items in grouped.items() %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">{{ get_name(cat) }}</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-borderless mb-0 align-middle trip-table">
+                    <tbody>
+                        {% for ti in items %}
+                        <tr class="border-bottom" id="row-{{ ti.id }}">
+                            <td style="width: 30%">{{ get_name(ti.item) }}</td>
+                            <td style="width: 25%">
+                                <select class="form-select form-select-sm status-select" data-id="{{ ti.id }}" aria-label="{{ t('category') }}">
+                                    <option value="unchecked" {% if ti.status == 'unchecked' %}selected{% endif %}>{{ t('status_unchecked') }}</option>
+                                    <option value="packed" {% if ti.status == 'packed' %}selected{% endif %}>{{ t('status_packed') }}</option>
+                                    <option value="na" {% if ti.status == 'na' %}selected{% endif %}>{{ t('status_na') }}</option>
+                                    <option value="standby" {% if ti.status == 'standby' %}selected{% endif %}>{{ t('status_standby') }}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm notes-input" data-id="{{ ti.id }}" placeholder="{{ t('notes') }}..." value="{{ ti.notes|e }}" maxlength="255">
+                            </td>
+                            <td style="width: 12%">
+                                <span id="toast-{{ ti.id }}" class="saved-toast text-muted" aria-live="polite"></span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">{{ t('no_trips') }}</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const csrfToken = window.CSRF_TOKEN;
+    const timers = new Map();
+    const savedLabel = {{ t('saved')|tojson }};
+    const failedLabel = {{ t('save_failed')|tojson }};
+
+    const setToast = (id, message, isError = false) => {
+        const toast = document.getElementById(`toast-${id}`);
+        if (!toast) return;
+        toast.classList.toggle('text-danger', isError);
+        toast.classList.toggle('text-muted', !isError);
+        toast.textContent = message;
+        toast.style.display = 'inline';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => {
+            toast.style.display = 'none';
+        }, 1800);
+    };
+
+    const setRowSaving = (id, saving) => {
+        const row = document.getElementById(`row-${id}`);
+        if (row) row.classList.toggle('item-saving', saving);
+    };
+
+    const updateItem = async (id, field, value) => {
+        setRowSaving(id, true);
+        try {
+            const response = await fetch(`/api/update_item/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({ [field]: value }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || failedLabel);
+            }
+
+            setToast(id, `✓ ${savedLabel}`, false);
+        } catch (error) {
+            setToast(id, `✕ ${error.message || failedLabel}`, true);
+        } finally {
+            setRowSaving(id, false);
+        }
+    };
+
+    document.querySelectorAll('.status-select').forEach(el => {
+        el.addEventListener('change', (event) => {
+            updateItem(event.target.dataset.id, 'status', event.target.value);
+        });
+    });
+
+    document.querySelectorAll('.notes-input').forEach(el => {
+        el.addEventListener('input', (event) => {
+            const id = event.target.dataset.id;
+            const key = `${id}:notes`;
+            clearTimeout(timers.get(key));
+            timers.set(key, setTimeout(() => {
+                updateItem(id, 'notes', event.target.value);
+            }, 450));
+        });
+    });
+});
+</script>
+{% endblock %}
