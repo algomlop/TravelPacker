@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    .item-row.status-packed { background-color: #e8f5e9; text-decoration: line-through; color: #6c757d; }
+    .item-row.status-na { background-color: #e9ecef; color: #adb5bd; }
+    .item-row.status-standby { background-color: #fff3cd; }
+    .item-row { transition: background-color 0.3s ease; }
+</style>
 <div class="mb-4">
     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
         <i class="fas fa-arrow-left"></i> {{ t('dashboard') }}
