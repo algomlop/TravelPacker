@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  travelpacker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: travelpacker
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    environment:
+      - PYTHONUNBUFFERED=1
+      
