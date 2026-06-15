@@ -22,13 +22,40 @@
                 </form>
 
                 <ul class="list-group">
-                    {% for cat in categories %}
-                        <li class="list-group-item">
+                {% for cat in categories %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
                             <strong>EN:</strong> {{ cat.name_en }} | <strong>ES:</strong> {{ cat.name_es }}
                             <span class="badge bg-secondary">{{ cat.items|length }} items</span>
-                        </li>
-                    {% endfor %}
-                </ul>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin') }}" onsubmit="return confirm('{{ t('delete_confirm') }}');" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="category_id" value="{{ cat.id }}">
+                            <button type="submit" name="delete_category" class="btn btn-sm btn-outline-danger" title="{{ t('delete') }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+            
+            <ul class="list-group" style="max-height: 400px; overflow-y: auto;">
+                {% for item in items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-info me-2">{{ item.category.name_en }}</span>
+                            <strong>{{ item.name_en }}</strong> / {{ item.name_es }}
+                        </div>
+                        <form method="POST" action="{{ url_for('admin') }}" onsubmit="return confirm('{{ t('delete_confirm') }}');" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <button type="submit" name="delete_item" class="btn btn-sm btn-outline-danger" title="{{ t('delete') }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
             </div>
 
             <div class="col-md-6">
