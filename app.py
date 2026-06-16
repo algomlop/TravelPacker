@@ -87,7 +87,7 @@ TRANSLATIONS = {
         "go_to_trip": "Open Checklist",
         "status_unchecked": "To Pack",
         "status_packed": "Packed",
-        "status_na": "N/A",
+        "status_na": "Not applicable",
         "status_standby": "Standby",
         "notes": "Notes",
         "custom_items": "My Custom Elements",
