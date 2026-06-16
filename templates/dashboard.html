@@ -1,241 +1,463 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row">
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-plus-circle"></i> {{ t('new_trip') }}</h5>
+
+<style>
+/* ── Dashboard layout ───────────────────────────────────── */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Category checkbox list ─────────────────────────────── */
+.cat-grid {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 0.5rem;
+    background: var(--surface-2);
+}
+.cat-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--r-xs);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.12s;
+}
+.cat-check:hover { background: var(--primary-lt); }
+.cat-check input[type=checkbox] { accent-color: var(--primary); width:16px; height:16px; flex-shrink:0; cursor:pointer; }
+.cat-check-label { font-size: 0.875rem; color: var(--text); flex:1; cursor:pointer; }
+.cat-count {
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: var(--muted-bg);
+    color: var(--muted);
+    padding: 1px 6px;
+    border-radius: 99px;
+}
+
+/* ── Trip cards ─────────────────────────────────────────── */
+.trip-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    position: relative;
+    border-left: 4px solid var(--border);
+}
+.trip-card:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--primary);
+    transform: translateX(2px);
+}
+.trip-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+.trip-card-info { flex: 1; min-width: 0; }
+.trip-card-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    line-height: 1.3;
+}
+.trip-card-name:hover { color: var(--primary); }
+.trip-card-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.trip-card-progress {
+    margin-top: 0.65rem;
+}
+.trip-prog-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.trip-prog-pct {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+.trip-badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-top: 0.55rem;
+}
+.trip-del-btn {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--danger-bd);
+    background: none;
+    border-radius: var(--r-xs);
+    color: var(--danger);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.8rem;
+}
+.trip-del-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+/* ── Empty state ────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+.empty-state i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+.empty-state p { font-size: 0.9rem; margin: 0; }
+
+/* ── Accordion toggle ───────────────────────────────────── */
+.accordion-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: none;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    width: 100%;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--text);
+    gap: 0.5rem;
+    transition: background 0.15s;
+}
+.accordion-toggle:hover { background: var(--surface-2); }
+.accordion-toggle i.fa-caret-down {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.accordion-toggle.open i.fa-caret-down { transform: rotate(180deg); }
+.accordion-body { padding: 1.25rem; }
+
+/* ── Custom items list ──────────────────────────────────── */
+.custom-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: var(--r-xs);
+    font-size: 0.83rem;
+    color: var(--text);
+}
+.custom-item-row:hover { background: var(--surface-2); }
+.custom-item-cat {
+    font-size: 0.7rem;
+    background: var(--primary-lt);
+    color: var(--primary);
+    padding: 1px 6px;
+    border-radius: 99px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+</style>
+
+<div class="dash-grid">
+    <!-- ── Left panel ── -->
+    <div>
+        <!-- New trip form -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="card-header">
+                <i class="fas fa-plus-circle"></i>
+                {{ t('new_trip') }}
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('dashboard') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
+                    <div style="margin-bottom:0.9rem;">
                         <label class="form-label">{{ t('trip_name') }}</label>
-                        <input type="text" name="trip_name" class="form-control" required>
+                        <input type="text" name="trip_name" class="form-control"
+                               placeholder="Viaje a Roma…" required>
                     </div>
-                    <div class="mb-3">
+                    <div style="margin-bottom:1rem;">
                         <label class="form-label">{{ t('select_categories') }}</label>
-                        <div class="category-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 10px;">
+                        <div class="cat-grid">
                             {% for cat in categories %}
-                                <div class="form-check" data-category-id="{{ cat.id }}" style="position: relative; margin-left: 10px; margin-bottom: 6px;">
-                                    <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}" id="cat{{ cat.id }}">
-                                    <label class="form-check-label" for="cat{{ cat.id }}">
-                                        {{ get_name(cat) }} <span class="badge bg-secondary">{{ cat.items|length }}</span>
-                                    </label>
-                                </div>
+                                <label class="cat-check" data-category-id="{{ cat.id }}">
+                                    <input type="checkbox" name="categories" value="{{ cat.id }}">
+                                    <span class="cat-check-label">{{ get_name(cat) }}</span>
+                                    <span class="cat-count">{{ cat.items|length }}</span>
+                                </label>
                             {% endfor %}
                         </div>
                     </div>
-                    <button type="submit" name="create_trip" class="btn btn-primary w-100">
+                    <button type="submit" name="create_trip" class="btn btn-primary btn-block">
                         <i class="fas fa-plane-departure"></i> {{ t('create_trip') }}
                     </button>
                 </form>
             </div>
         </div>
 
+        <!-- Custom items — collapsed by default -->
         <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0"><i class="fas fa-edit"></i> {{ t('custom_items') }}</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('dashboard') }}" class="mb-3">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-2">
-                        <input type="text" name="cat_name" class="form-control" placeholder="{{ t('category') }}">
-                    </div>
-                    <button type="submit" name="add_category" class="btn btn-sm btn-outline-primary w-100">
-                        <i class="fas fa-folder-plus"></i> {{ t('add_category') }}
-                    </button>
-                </form>
+            <button type="button" class="accordion-toggle" id="customToggle" aria-expanded="false">
+                <span style="display:flex;align-items:center;gap:0.5rem;">
+                    <i class="fas fa-edit" style="color:var(--primary);"></i>
+                    {{ t('custom_items') }}
+                    {% if user_items %}
+                        <span class="cat-count">{{ user_items|length }}</span>
+                    {% endif %}
+                </span>
+                <i class="fas fa-caret-down"></i>
+            </button>
+            <div id="customBody" style="display:none;">
+                <div class="accordion-body">
+                    <!-- Add category -->
+                    <form method="POST" action="{{ url_for('dashboard') }}" style="margin-bottom:0.75rem;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="form-label">{{ t('add_category') }}</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" name="cat_name" class="form-control"
+                                   placeholder="{{ t('category') }}…">
+                            <button type="submit" name="add_category" class="btn btn-outline-primary btn-sm" style="flex-shrink:0;">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                        </div>
+                    </form>
 
-                <form method="POST" action="{{ url_for('dashboard') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-2">
-                        <select name="category_id" class="form-select">
+                    <!-- Add item -->
+                    <form method="POST" action="{{ url_for('dashboard') }}" style="margin-bottom:1rem;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="form-label">{{ t('add_item') }}</label>
+                        <select name="category_id" class="form-select" style="margin-bottom:0.4rem;">
                             {% for cat in categories %}
                                 <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="mb-2">
-                        <input type="text" name="item_name" class="form-control" placeholder="{{ t('item_name') }}">
-                    </div>
-                    <button type="submit" name="add_item" class="btn btn-sm btn-outline-primary w-100">
-                        <i class="fas fa-plus"></i> {{ t('add_item') }}
-                    </button>
-                </form>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="text" name="item_name" class="form-control"
+                                   placeholder="{{ t('item_name') }}…">
+                            <button type="submit" name="add_item" class="btn btn-outline-primary btn-sm" style="flex-shrink:0;">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </form>
 
-                <hr>
-                <h6>{{ t('custom_items') }}</h6>
-                {% if user_items %}
-                    <ul class="list-unstyled">
-                        {% for item in user_items %}
-                            <li><small>- {{ item.name_en }} ({{ get_name(item.category) }})</small></li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted small">{{ t('no_items') }}</p>
-                {% endif %}
+                    <!-- List -->
+                    {% if user_items %}
+                        <div style="border-top:1px solid var(--border);padding-top:0.75rem;">
+                            {% for item in user_items %}
+                                <div class="custom-item-row">
+                                    <i class="fas fa-tag" style="color:var(--border-2);font-size:0.7rem;"></i>
+                                    <span style="flex:1;">{{ item.name_en }}</span>
+                                    <span class="custom-item-cat">{{ get_name(item.category) }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="font-size:0.82rem;color:var(--text-muted);margin:0;">{{ t('no_items') }}</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-8">
+    <!-- ── Right panel — trip list ── -->
+    <div>
         <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-list"></i> {{ t('my_trips') }} ({{ trips|length }})</h4>
+            <div class="card-header">
+                <i class="fas fa-list"></i>
+                {{ t('my_trips') }}
+                <span class="header-count">{{ trips|length }}</span>
             </div>
             <div class="card-body">
                 {% if trips %}
                     {% for trip in trips %}
-                        {% set total = trip.items|length %}
-                        {% set packed = trip.items|selectattr('status', 'equalto', 'packed')|list|length %}
-                        {% set na = trip.items|selectattr('status', 'equalto', 'na')|list|length %}
-                        {% set standby = trip.items|selectattr('status', 'equalto', 'standby')|list|length %}
-                        {% set unchecked = trip.items|selectattr('status', 'equalto', 'unchecked')|list|length %}
-                        {% set percent = (packed / total * 100)|round|int if total > 0 else 0 %}
-                        
-                        <div class="card mb-3 trip-card" onclick="window.location='{{ url_for('trip', trip_id=trip.id) }}'">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h5 class="card-title">
-                                            <i class="fas fa-plane"></i> 
-                                            <a href="{{ url_for('trip', trip_id=trip.id) }}" class="text-decoration-none text-dark">
-                                                {{ trip.name }}
-                                            </a>
-                                        </h5>
-                                        <p class="text-muted mb-2">
-                                            <i class="fas fa-calendar"></i> {{ trip.created_at.strftime('%Y-%m-%d') }}
-                                        </p>
-                                        <div class="progress mb-2">
-                                            <div class="progress-bar bg-success" style="width: {{ percent }}%">
-                                                {{ percent }}% {{ t('progress_complete') }}
-                                            </div>
+                        {% set total    = trip.items|length %}
+                        {% set packed   = trip.items|selectattr('status','equalto','packed')|list|length %}
+                        {% set na       = trip.items|selectattr('status','equalto','na')|list|length %}
+                        {% set standby  = trip.items|selectattr('status','equalto','standby')|list|length %}
+                        {% set unchecked= trip.items|selectattr('status','equalto','unchecked')|list|length %}
+                        {% set pct = ((packed / total * 100)|round|int) if total > 0 else 0 %}
+
+                        <div class="trip-card" onclick="window.location='{{ url_for('trip', trip_id=trip.id) }}'">
+                            <div class="trip-card-top">
+                                <div class="trip-card-info">
+                                    <a href="{{ url_for('trip', trip_id=trip.id) }}" class="trip-card-name"
+                                       onclick="event.stopPropagation();">
+                                        <i class="fas fa-plane" style="color:var(--primary);margin-right:0.35rem;font-size:0.85em;"></i>{{ trip.name }}
+                                    </a>
+                                    <div class="trip-card-date">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        {{ trip.created_at.strftime('%d %b %Y') }}
+                                    </div>
+
+                                    <div class="trip-card-progress">
+                                        <div class="trip-prog-row">
+                                            <span class="trip-prog-pct">{{ pct }}% {{ t('progress_complete') }}</span>
+                                            <span style="font-size:0.72rem;color:var(--text-muted);">{{ packed }}/{{ total }}</span>
                                         </div>
-                                        <div>
-                                            <span class="badge bg-danger"><i class="fas fa-box"></i> {{ unchecked }}</span>
-                                            <span class="badge bg-success"><i class="fas fa-check"></i> {{ packed }}</span>
-                                            <span class="badge bg-warning"><i class="fas fa-clock"></i> {{ standby }}</span>
-                                            <span class="badge bg-secondary"><i class="fas fa-ban"></i> {{ na }}</span>
+                                        <div class="prog-track">
+                                            <div class="prog-fill {% if pct == 100 %}done{% endif %}"
+                                                 style="width:{{ pct }}%;"></div>
                                         </div>
                                     </div>
-                                    <form method="POST" action="{{ url_for('delete_trip', trip_id=trip.id) }}" class="ms-2" onclick="event.stopPropagation();">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('{{ t('delete_confirm') }}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+
+                                    <div class="trip-badges">
+                                        {% if unchecked > 0 %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-box"></i> {{ unchecked }}
+                                        </span>
+                                        {% endif %}
+                                        {% if packed > 0 %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check"></i> {{ packed }}
+                                        </span>
+                                        {% endif %}
+                                        {% if standby > 0 %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-clock"></i> {{ standby }}
+                                        </span>
+                                        {% endif %}
+                                        {% if na > 0 %}
+                                        <span class="badge badge-muted">
+                                            <i class="fas fa-ban"></i> {{ na }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
                                 </div>
+
+                                <!-- Delete button -->
+                                <form method="POST" action="{{ url_for('delete_trip', trip_id=trip.id) }}"
+                                      onclick="event.stopPropagation();">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="trip-del-btn"
+                                            onclick="return confirm('{{ t('delete_confirm') }}')"
+                                            title="{{ t('delete') }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-suitcase fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">{{ t('no_trips') }}</p>
-                        <p class="text-muted small">{{ t('dashboard_empty') }}</p>
+                    <div class="empty-state">
+                        <i class="fas fa-suitcase"></i>
+                        <p><strong>{{ t('no_trips') }}</strong><br>
+                           <span style="font-size:0.82rem;">{{ t('dashboard_empty') }}</span></p>
                     </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
-{{ super() }} <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const checks = document.querySelectorAll('.form-check[data-category-id]');
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    /* ── Custom items accordion ── */
+    const toggle = document.getElementById('customToggle');
+    const body   = document.getElementById('customBody');
+    if (toggle && body) {
+        toggle.addEventListener('click', function () {
+            const open = body.style.display !== 'none';
+            body.style.display = open ? 'none' : 'block';
+            toggle.classList.toggle('open', !open);
+            toggle.setAttribute('aria-expanded', String(!open));
+        });
+    }
+
+    /* ── Category preview tooltip ── */
+    const PREVIEW_URL = (id) =>
+        '{{ url_for("category_preview", cat_id=0) }}'.replace('/0', '/' + id);
+
     let activeTooltip = null;
-    let hideTimeout = null;
-    let currentFetch = null;
+    let hideTimeout   = null;
+    let currentCtrl   = null;
 
     function removeTooltip() {
         if (activeTooltip) {
-            activeTooltip.classList.remove('visible');
-            setTimeout(() => {
-                if (activeTooltip && activeTooltip.parentNode) {
-                    activeTooltip.parentNode.removeChild(activeTooltip);
-                }
-                activeTooltip = null;
-            }, 150);
+            activeTooltip.style.opacity = '0';
+            setTimeout(() => { activeTooltip?.remove(); activeTooltip = null; }, 150);
         }
     }
 
     function showTooltip(target, data) {
         removeTooltip();
-
-        const tooltip = document.createElement('div');
-        tooltip.className = 'category-tooltip';
-
-        const maxShow = 8;
-        const itemsToShow = data.items.slice(0, maxShow);
-        const remaining = data.items.length - itemsToShow.length;
-
-        tooltip.innerHTML = `
-            <div class="tt-title">${data.category_name}</div>
-            <div class="tt-meta">${data.total} {{ t('items_label') }}</div>
-            <div class="tt-list">
-                ${itemsToShow.map(i => `• ${i}`).join('<br>')}
-            </div>
-            ${remaining > 0 ? `<div class="tt-more">... {{ t('and') }} ${remaining} {{ t('more') }}</div>` : ''}
+        const tt = document.createElement('div');
+        tt.style.cssText = `
+            position:absolute; background:rgba(20,18,56,.97); color:white;
+            padding:10px 13px; border-radius:10px; font-size:12px;
+            max-width:260px; z-index:9999; box-shadow:var(--shadow-lg);
+            pointer-events:none; opacity:0; transition:opacity 0.15s;
+            line-height:1.5;
         `;
-
-        document.body.appendChild(tooltip);
+        const maxShow = 7;
+        const shown   = data.items.slice(0, maxShow);
+        const rest    = data.items.length - shown.length;
+        tt.innerHTML  = `
+            <div style="font-weight:700;color:#a5b4fc;margin-bottom:4px;">${data.category_name}</div>
+            <div style="font-size:10px;color:#9CA3AF;border-bottom:1px solid #374151;padding-bottom:4px;margin-bottom:5px;">${data.total} {{ t('items_label') }}</div>
+            ${shown.map(i => `• ${i}`).join('<br>')}
+            ${rest > 0 ? `<div style="color:#FCD34D;font-style:italic;margin-top:4px;font-size:10px;">+ ${rest} {{ t('more') }}</div>` : ''}
+        `;
+        document.body.appendChild(tt);
 
         const rect = target.getBoundingClientRect();
-        const scrollY = window.scrollY || window.pageYOffset;
-        const scrollX = window.scrollX || window.pageXOffset;
+        const sy   = window.scrollY;
+        const sx   = window.scrollX;
+        let   left = rect.left + sx + rect.width / 2 - tt.offsetWidth / 2;
+        let   top  = rect.bottom + sy + 6;
+        if (left < 8)                                  left = 8;
+        if (left + tt.offsetWidth > window.innerWidth - 8)
+            left = window.innerWidth - tt.offsetWidth - 8;
+        if (top + tt.offsetHeight > window.innerHeight + sy - 8)
+            top = rect.top + sy - tt.offsetHeight - 6;
 
-        let left = rect.left + scrollX + (rect.width / 2) - (tooltip.offsetWidth / 2);
-        let top = rect.bottom + scrollY + 8;
-
-        if (left < 10) left = 10;
-        if (left + tooltip.offsetWidth > window.innerWidth - 10) {
-            left = window.innerWidth - tooltip.offsetWidth - 10;
-        }
-
-        if (top + tooltip.offsetHeight > window.innerHeight + scrollY - 10) {
-            top = rect.top + scrollY - tooltip.offsetHeight - 8;
-        }
-
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-        activeTooltip = tooltip;
-
-        requestAnimationFrame(() => tooltip.classList.add('visible'));
+        tt.style.left = left + 'px';
+        tt.style.top  = top  + 'px';
+        activeTooltip = tt;
+        requestAnimationFrame(() => { tt.style.opacity = '1'; });
     }
 
-    checks.forEach(check => {
-        const catId = check.dataset.categoryId;
-
-        check.addEventListener('mouseenter', function() {
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
-            if (currentFetch) {
-                try { currentFetch.abort && currentFetch.abort(); } catch(e) {}
-            }
-
-            const controller = new AbortController();
-            currentFetch = controller;
-
-            fetch('{{ url_for("category_preview", cat_id=0) }}'.replace('/0', '/' + catId), { signal: controller.signal })
+    document.querySelectorAll('.cat-check[data-category-id]').forEach(el => {
+        const catId = el.dataset.categoryId;
+        el.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimeout);
+            currentCtrl?.abort();
+            const ctrl = new AbortController();
+            currentCtrl = ctrl;
+            fetch(PREVIEW_URL(catId), { signal: ctrl.signal })
                 .then(r => r.json())
-                .then(data => {
-                    if (data && data.items && data.items.length > 0) {
-                        showTooltip(check, data);
-                    }
-                })
-                .catch(err => {
-                    if (err.name !== 'AbortError') console.error(err);
-                });
+                .then(d => { if (d.items?.length) showTooltip(el, d); })
+                .catch(e => { if (e.name !== 'AbortError') console.error(e); });
         });
-
-        check.addEventListener('mouseleave', function() {
-            hideTimeout = setTimeout(removeTooltip, 150);
+        el.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(removeTooltip, 160);
         });
     });
 });
