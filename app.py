@@ -26,7 +26,7 @@ if not _secret:
     import warnings
     warnings.warn(
         "SECRET_KEY no configurada. Se usará una clave aleatoria: "
-        "las sesiones no sobrevivirán reinicios.",
+        "las sesiones no sobrevivirán reinicios."
         "SECRET_KEY not configured. A random key will be used: "
         "sessions will not survive reboots.",
         stacklevel=1,
