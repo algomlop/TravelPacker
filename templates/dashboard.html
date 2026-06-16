@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const controller = new AbortController();
             currentFetch = controller;
 
-            fetch(`/api/category/${catId}/preview`, { signal: controller.signal })
+            fetch('{{ url_for("category_preview", cat_id=0) }}'.replace('/0', '/' + catId), { signal: controller.signal })
                 .then(r => r.json())
                 .then(data => {
                     if (data && data.items && data.items.length > 0) {
