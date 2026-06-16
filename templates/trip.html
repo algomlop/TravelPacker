@@ -453,9 +453,13 @@
 
 <script>
 const CSRF_TOKEN = '{{ csrf_token() }}';
+const TRIP_ID = {{ trip.id }};
+
+const URL_UPDATE_ITEM = (id) => '{{ url_for("update_item", ti_id=0) }}'.replace('/0', '/' + id);
+const URL_ADD_TRIP_ITEM = '{{ url_for("add_trip_item") }}';
 
 function updateItem(itemId, data) {
-    fetch(`/api/update_item/${itemId}`, {
+    fetch(URL_UPDATE_ITEM(itemId), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -471,26 +475,20 @@ function updateItem(itemId, data) {
                 itemRow.className = `item-row status-${data.status}`;
                 itemRow.dataset.status = data.status;
 
-                
-                
-       
                 setTimeout(() => {
                     const categorySection = itemRow.closest('.category-section');
                     const addButton = categorySection.querySelector('.add-item-btn');
                     const addForm = categorySection.querySelector('.add-item-form');
                     const items = Array.from(categorySection.querySelectorAll('.item-row'));
+
                     items.sort((a, b) => {
                         const order = {'unchecked': 0, 'standby': 1, 'packed': 2, 'na': 3};
                         return order[a.dataset.status] - order[b.dataset.status];
                     });
-                    
+
                     const container = categorySection.querySelector('.category-items');
-                    items.forEach(item => {
-                        const notes = item.nextElementSibling;
-                        container.appendChild(item);
-                        if (notes) container.appendChild(notes);
-                    });
-                    
+                    // El textarea está DENTRO de .item-row, no es un hermano
+                    items.forEach(item => container.appendChild(item));
 
                     if (addButton) container.appendChild(addButton);
                     if (addForm) container.appendChild(addForm);
@@ -527,21 +525,18 @@ function addQuickItem(event, categoryId) {
     event.preventDefault();
     const input = event.target.querySelector('input');
     const itemName = input.value.trim();
-    
     if (!itemName) return;
-    
-    const tripId = window.location.pathname.split('/').pop();
-    
-    fetch('/api/add_trip_item', {
+
+    fetch(URL_ADD_TRIP_ITEM, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': CSRF_TOKEN
         },
         body: JSON.stringify({
-            'trip_id': tripId,
-            'category_id': categoryId,
-            'item_name': itemName
+            trip_id: TRIP_ID,
+            category_id: categoryId,
+            item_name: itemName
         })
     })
     .then(response => response.json())
@@ -549,14 +544,11 @@ function addQuickItem(event, categoryId) {
         if (result.success) {
             window.location.reload();
         } else {
-            alert('Error al agregar el item: ' + (result.error || 'Error desconocido'));
+            alert('{{ t("error_adding_item") }}: ' + (result.error || ''));
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al agregar el item');
-    });
-    
+    .catch(() => alert('{{ t("error_adding_item") }}'));
+
     input.value = '';
 }
 
@@ -564,50 +556,34 @@ function updateProgressBar(categorySection) {
     const items = categorySection.querySelectorAll('.item-row');
     const packed = categorySection.querySelectorAll('.item-row.status-packed');
     const percentage = items.length > 0 ? (packed.length / items.length * 100) : 0;
-    
+
     const progressBar = categorySection.querySelector('.progress-fill');
     const progressText = categorySection.querySelector('.progress-text');
-    
+
     progressBar.style.width = `${percentage}%`;
     progressText.textContent = `${packed.length}/${items.length}`;
 }
 
-// Búsqueda
+// Search
 document.getElementById('searchInput').addEventListener('input', function(e) {
     const searchTerm = e.target.value.toLowerCase();
-    const items = document.querySelectorAll('.item-row');
-    
-    items.forEach(item => {
+    document.querySelectorAll('.item-row').forEach(item => {
         const itemName = item.querySelector('.item-name').textContent.toLowerCase();
-        const notes = item.nextElementSibling?.querySelector('.item-notes')?.value.toLowerCase() || '';
-        
-        if (itemName.includes(searchTerm) || notes.includes(searchTerm)) {
-            item.style.display = 'flex';
-            item.nextElementSibling.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-            item.nextElementSibling.style.display = 'none';
-        }
+        const notes = (item.querySelector('.item-notes')?.value || '').toLowerCase();
+        item.style.display = (itemName.includes(searchTerm) || notes.includes(searchTerm))
+            ? 'flex' : 'none';
     });
 });
 
-// Filtros
+// Filters
 document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        
         const filter = this.dataset.filter;
-        const items = document.querySelectorAll('.item-row');
-        
-        items.forEach(item => {
-            if (filter === 'all' || item.dataset.status === filter) {
-                item.style.display = 'flex';
-                item.nextElementSibling.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-                item.nextElementSibling.style.display = 'none';
-            }
+        document.querySelectorAll('.item-row').forEach(item => {
+            item.style.display = (filter === 'all' || item.dataset.status === filter)
+                ? 'flex' : 'none';
         });
     });
 });
