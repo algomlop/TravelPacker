@@ -1,42 +1,55 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
+<div style="min-height: calc(100vh - 100px); display:flex; align-items:center; justify-content:center; padding: 1.5rem 0;">
+    <div style="width:100%; max-width:400px;">
+
+        <div style="text-align:center; margin-bottom:1.75rem;">
+            <div style="width:72px;height:72px;background:var(--primary);border-radius:20px;
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;
+                        box-shadow:var(--shadow-md);">
+                <i class="fas fa-suitcase-rolling" style="font-size:1.9rem;color:white;"></i>
+            </div>
+            <h1 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.03em;
+                       color:var(--text);margin:0 0 0.25rem;">{{ t('app_title') }}</h1>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin:0;">{{ t('login_title') }}</p>
+        </div>
+
         <div class="card">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    
-                    <h2 class="card-title">{{ t('login_title') }}</h2>
-                </div>
-                
+            <div class="card-body" style="padding:1.75rem;">
                 <form method="POST" action="{{ url_for('index') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
+                    <div style="margin-bottom:1.1rem;">
                         <label class="form-label">{{ t('alias_label') }}</label>
-                        <input type="text" name="alias" class="form-control form-control-lg" required autofocus>
+                        <input type="text" name="alias" class="form-control"
+                               style="font-size:0.95rem;padding:0.65rem 1rem;"
+                               required autofocus autocomplete="username"
+                               placeholder="mi-alias-viajero">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">
                         <i class="fas fa-sign-in-alt"></i> {{ t('login_btn') }}
                     </button>
                 </form>
 
-                <div class="text-center">
-                    <div class="text-muted mb-3">— {{ t('or') if t('or') else 'or' }} —</div>
-                    <form method="POST" action="{{ url_for('guest') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-user-secret"></i> {{ t('guest_btn') }}
-                        </button>
-                    </form>
+                <div style="display:flex;align-items:center;gap:1rem;margin:1.1rem 0;">
+                    <div style="flex:1;height:1px;background:var(--border);"></div>
+                    <span style="color:var(--text-muted);font-size:0.8rem;">{{ t('or') }}</span>
+                    <div style="flex:1;height:1px;background:var(--border);"></div>
                 </div>
 
-                <div class="mt-4">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> {{ t('privacy_notice') }}
-                    </small>
-                </div>
+                <form method="POST" action="{{ url_for('guest') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-ghost btn-block">
+                        <i class="fas fa-user-secret"></i> {{ t('guest_btn') }}
+                    </button>
+                </form>
+
+                <p style="margin-top:1.25rem;margin-bottom:0;font-size:0.75rem;
+                          color:var(--text-muted);text-align:center;line-height:1.5;">
+                    <i class="fas fa-info-circle"></i> {{ t('privacy_notice') }}
+                </p>
             </div>
         </div>
+
     </div>
 </div>
 {% endblock %}
