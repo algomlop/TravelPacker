@@ -1,26 +1,44 @@
-from datetime import datetime, timedelta
-from secrets import token_urlsafe
-import os
-import re
-
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    login_user,
-    login_required,
-    logout_user,
-    current_user,
-)
-
 app = Flask(__name__)
 
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", token_urlsafe(32))
+# Config via env:
+#   SECRET_KEY   — clave de sesión (¡obligatoria en producción!) / session key (required in production!)
+#   DATABASE_URL — URI de base de datos / Database URI
+#   SCRIPT_NAME  — Prefijo de la ruta, por ejemplo "/travelpacker" / route prefix, e.g. "/travelpacker"
+_secret = os.environ.get("SECRET_KEY")
+if not _secret:
+    import warnings
+    warnings.warn(
+        "SECRET_KEY no configurada. Se usará una clave aleatoria: "
+        "las sesiones no sobrevivirán reinicios.",
+        "SECRET_KEY not configured. A random key will be used: "
+        "sessions will not survive reboots.",
+        stacklevel=1,
+    )
+    _secret = token_urlsafe(32)
+
+app.config["SECRET_KEY"] = _secret
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+
+_SCRIPT_NAME = os.environ.get("SCRIPT_NAME", "").rstrip("/")
+if _SCRIPT_NAME:
+    class _ReverseProxied:
+
+        def __init__(self, wsgi_app, script_name):
+            self.app = wsgi_app
+            self.script_name = script_name
+
+        def __call__(self, environ, start_response):
+            environ["SCRIPT_NAME"] = self.script_name
+            path = environ.get("PATH_INFO", "")
+            if path.startswith(self.script_name):
+                environ["PATH_INFO"] = path[len(self.script_name):]
+            return self.app(environ, start_response)
+
+    app.wsgi_app = _ReverseProxied(app.wsgi_app, _SCRIPT_NAME)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -73,7 +91,7 @@ TRANSLATIONS = {
         "no_items": "No custom items yet.",
         "dashboard_empty": "Create your first trip to start packing.",
         "save_failed": "Could not save changes.",
-        "trip_deleted": "Trip delete.",
+        "trip_deleted": "Trip deleted.",
         "delete_confirm": "Are you sure?",
         "language": "Language",
         "progress_complete": "complete",
@@ -89,6 +107,7 @@ TRANSLATIONS = {
         "item_added": "Item added successfully!",
         "search_items": "Search items...",
         "all": "All",
+        "or": "or",
     },
     "es": {
         "app_title": "Equipaje de Viaje",
@@ -146,6 +165,7 @@ TRANSLATIONS = {
         "item_added": "¡Elemento añadido con éxito!",
         "search_items": "Buscar elementos...",
         "all": "Todos",
+        "or": "o",
     },
 }
 
@@ -550,14 +570,13 @@ def admin():
 
 def clean_old_guests():
     yesterday = datetime.utcnow() - timedelta(days=1)
-    old_guests = User.query.filter(User.is_guest.is_(True), User.created_at < yesterday).all()
+    old_guests = User.query.filter(
+        User.is_guest.is_(True), User.created_at < yesterday
+    ).all()
     for guest in old_guests:
-        for trip in Trip.query.filter_by(user_id=guest.id).all():
-            db.session.delete(trip)
-        for item in Item.query.filter_by(user_id=guest.id).all():
-            db.session.delete(item)
-        for category in Category.query.filter_by(user_id=guest.id).all():
-            db.session.delete(category)
+        Trip.query.filter_by(user_id=guest.id).delete(synchronize_session="fetch")
+        Item.query.filter_by(user_id=guest.id).delete(synchronize_session="fetch")
+        Category.query.filter_by(user_id=guest.id).delete(synchronize_session="fetch")
         db.session.delete(guest)
     db.session.commit()
 
