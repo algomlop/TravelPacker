@@ -13,5 +13,5 @@ services:
       - PYTHONUNBUFFERED=1
       - SCRIPT_NAME=/travelpacker # CHANGE IT
       - SECRET_KEY=secret_key # CHANGE IT 
-      - ADMIN_USER=admin123 # CHANGE IT 
+      - ADMIN_ALIAS=admin123 # CHANGE IT 
       
