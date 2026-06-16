@@ -4,6 +4,7 @@ app = Flask(__name__)
 #   SECRET_KEY   — clave de sesión (¡obligatoria en producción!) / session key (required in production!)
 #   DATABASE_URL — URI de base de datos / Database URI
 #   SCRIPT_NAME  — Prefijo de la ruta, por ejemplo "/travelpacker" / route prefix, e.g. "/travelpacker"
+#   ADMIN_ALIAS  — Usuario administrador / Admin user
 _secret = os.environ.get("SECRET_KEY")
 if not _secret:
     import warnings
