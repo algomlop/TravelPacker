@@ -2,588 +2,758 @@
 {% block content %}
 
 <style>
+/* ═══════════════════════════════════════════════════════════
+   TRIP PAGE — all colors from design-token vars in base.html
+═══════════════════════════════════════════════════════════ */
+
+/* ── Trip header ─────────────────────────────────────────── */
 .trip-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    padding: 10px 20px 10px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-d) 100%);
     color: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.1rem;
 }
-
-.trip-title {
-    font-size: 2em;
-    margin: 0;
-    font-weight: 600;
+.trip-header-icon {
+    width: 42px; height: 42px; flex-shrink: 0;
+    background: rgba(255,255,255,.18);
+    border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
 }
-
-.trip-actions a {
-    color: white;
+.trip-header-info { flex: 1; min-width: 0; }
+.trip-header-name {
+    font-size: 1.25rem; font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    line-height: 1.2;
+}
+.trip-header-sub {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    margin-top: 0.1rem;
+}
+.trip-header-back {
+    color: rgba(255,255,255,.85);
     text-decoration: none;
-    padding: 8px 16px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 8px;
-    transition: all 0.3s;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    background: rgba(255,255,255,.15);
+    border-radius: var(--r-sm);
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
+.trip-header-back:hover { background: rgba(255,255,255,.28); color: white; }
 
-.trip-actions a:hover {
-    background: rgba(255,255,255,0.3);
+/* ── Search + filters ────────────────────────────────────── */
+.search-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
 }
-
-.search-bar {
-    margin-bottom: 20px;
+.search-input-wrap {
     position: relative;
 }
-
-.search-bar input {
-    padding: 12px 20px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 1em;
-    transition: all 0.3s;
+.search-input-wrap i {
+    position: absolute; left: 0.85rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.85rem;
+    pointer-events: none;
 }
-
-.search-bar input:focus {
+.search-input-wrap input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.2rem;
+    border: 1.5px solid var(--border-2);
+    border-radius: var(--r-sm);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input-wrap input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
 }
-
 .filter-bar {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
-
 .filter-btn {
-    padding: 8px 16px;
-    border: 2px solid #e0e0e0;
-    background: white;
-    border-radius: 20px;
+    padding: 0.3rem 0.8rem;
+    border: 1.5px solid var(--border-2);
+    background: var(--surface);
+    border-radius: 99px;
     cursor: pointer;
-    transition: all 0.3s;
-    font-size: 0.9em;
-}
-
-.filter-btn.active {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
-}
-
-.category-section {
-    margin-bottom: 30px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    overflow: hidden;
-}
-
-.category-header {
-    padding: 20px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-bottom: 2px solid #e0e0e0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.category-title {
-    font-size: 1.5em;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: #333;
-    margin: 0;
+    color: var(--muted);
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.filter-btn.active {
+    background: var(--primary); color: white;
+    border-color: var(--primary);
 }
 
-.category-stats {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.progress-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.progress-bar {
-    width: 150px;
-    height: 8px;
-    background: #e0e0e0;
-    border-radius: 10px;
+/* ── Category section ────────────────────────────────────── */
+.cat-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 0.85rem;
     overflow: hidden;
 }
 
-.progress-fill {
+/* Category accordion header */
+.cat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s;
+    border: none;
+    background: var(--surface-2);
+    width: 100%;
+    text-align: left;
+}
+.cat-header:hover { background: var(--primary-lt); }
+.cat-header-name {
+    font-size: 0.95rem; font-weight: 700;
+    color: var(--text); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cat-header-progress {
+    display: flex; align-items: center; gap: 0.55rem;
+    flex-shrink: 0;
+}
+.cat-prog-track {
+    width: 80px; height: 5px;
+    background: var(--border); border-radius: 99px; overflow: hidden;
+}
+@media (max-width: 480px) { .cat-prog-track { width: 52px; } }
+.cat-prog-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    transition: width 0.3s ease;
-    border-radius: 10px;
+    background: linear-gradient(90deg, var(--primary), #818CF8);
+    border-radius: 99px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
 }
-
-.progress-text {
-    font-size: 0.9em;
-    color: #666;
-    font-weight: 500;
+.cat-prog-fill.done { background: var(--success); }
+.cat-prog-text {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--text-muted); min-width: 28px; text-align: right;
 }
-
-.category-items {
-    padding: 10px 20px;
+.cat-chevron {
+    color: var(--text-muted); font-size: 0.72rem;
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+    flex-shrink: 0;
 }
+.cat-header[aria-expanded="false"] .cat-chevron { transform: rotate(-90deg); }
 
+/* Category body — smooth collapse */
+.cat-body-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.25s cubic-bezier(.4,0,.2,1);
+}
+.cat-body-collapse.collapsed { grid-template-rows: 0fr; }
+.cat-body-collapse > div { overflow: hidden; }
+.cat-body { padding: 0.5rem 0.75rem 0.75rem; }
+
+/* ── Item rows ───────────────────────────────────────────── */
 .item-row {
     display: flex;
+    align-items: flex-start;   /* FIX: top-align so wrapped names don't clash with buttons */
+    gap: 0.6rem;
+    padding: 0.55rem 0.6rem;
+    border-radius: var(--r-sm);
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    margin-bottom: 0.2rem;
+}
+.item-row:hover { background: var(--surface-2); }
+
+/* FIX: inner content wrapper — name + actions on one line, notes below */
+.item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.item-top {
+    display: flex;
     align-items: center;
-    padding: 3px 3px 3px 15px;
-    border-radius: 8px;
-    transition: all 0.3s;
-    background: #fafafa;
-
+    gap: 0.5rem;
+    min-width: 0;
 }
 
-.item-row:hover {
-    background: #f0f4ff;
-    transform: translateX(5px);
+/* FIX: checkbox top-aligned to match first text line */
+.item-cb {
+    position: relative;
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin-top: 1px;  /* nudge to align with first line of text */
+}
+.item-cb input { opacity: 0; width: 0; height: 0; position: absolute; }
+.item-cb-box {
+    position: absolute; inset: 0;
+    border: 2px solid var(--border-2);
+    border-radius: var(--r-xs);
+    background: var(--surface);
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.item-cb input:checked ~ .item-cb-box {
+    background: var(--success);
+    border-color: var(--success);
+}
+.item-cb input:checked ~ .item-cb-box::after {
+    content: '✓';
+    color: white; font-size: 13px; font-weight: 800;
+    line-height: 1;
 }
 
-.item-row.status-packed {
-    border-left-color: #4caf50;
-    background: #f1f8f4;
-}
-
-.item-row.status-na {
-    border-left-color: #9e9e9e;
-    background: #f5f5f5;
-    opacity: 0.7;
-}
+/* Status-specific row styles */
+.item-row.status-unchecked { border-left-color: var(--border-2); }
+.item-row.status-unchecked:hover { border-left-color: var(--primary); background: var(--primary-lt); }
 
 .item-row.status-standby {
-    border-left-color: #ff9800;
-    background: #fff8f0;
+    border-left-color: var(--warning-bd);
+    background: var(--warning-bg);
+}
+.item-row.status-standby:hover { background: #fef3c7; }
+
+/* Packed — compact, muted, at bottom */
+.item-row.status-packed {
+    padding: 0.35rem 0.6rem;
+    border-left-color: var(--success-bd);
+    background: var(--success-bg);
+    opacity: 0.75;
+}
+.item-row.status-packed:hover { opacity: 1; }
+
+/* N/A — very compact, gray */
+.item-row.status-na {
+    padding: 0.3rem 0.6rem;
+    border-left-color: var(--muted-bd);
+    background: var(--muted-bg);
+    opacity: 0.55;
+}
+.item-row.status-na:hover { opacity: 0.85; }
+
+/* Smaller checkbox for packed/NA */
+.item-row.status-packed .item-cb,
+.item-row.status-na    .item-cb { width: 18px; height: 18px; }
+.item-row.status-packed .item-cb-box,
+.item-row.status-na    .item-cb-box { width: 18px; height: 18px; }
+
+/* Packed & NA & Standby separator label */
+.done-separator {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0.6rem 0 0.3rem;
+    font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+.done-separator::before, .done-separator::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
-.item-checkbox {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    margin-right: 15px;
-    cursor: pointer;
-}
-
-.item-checkbox input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 28px;
-    height: 28px;
-    background: white;
-    border: 2px solid #667eea;
-    border-radius: 6px;
-    transition: all 0.3s;
-}
-
-.item-checkbox input:checked ~ .checkmark {
-    background: #667eea;
-    border-color: #667eea;
-}
-
-.item-checkbox input:checked ~ .checkmark:after {
-    content: "✓";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-}
-
+/* ── Item name ───────────────────────────────────────────── */
 .item-name {
     flex: 1;
-    font-size: 1.1em;
-    color: #333;
-    font-weight: 500;
+    font-size: 0.95rem; font-weight: 500; color: var(--text);
+    min-width: 0;
+    word-break: break-word;  /* FIX: wrap long names instead of overflowing */
 }
-
 .item-row.status-packed .item-name {
-    text-decoration: line-through;
-    color: #999;
+    font-size: 0.82rem; text-decoration: line-through;
+    color: var(--success); font-weight: 400;
 }
+.item-row.status-na .item-name {
+    font-size: 0.8rem; color: var(--muted); font-weight: 400;
+    font-style: italic;
+}
+.item-row.status-standby .item-name { color: var(--warning); }
 
+/* ── Item action buttons ─────────────────────────────────── */
 .item-actions {
-    display: flex;
-    gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    padding-right: 10px;
+    display: flex; gap: 0.3rem; flex-shrink: 0;
+}
+/* FIX: hide on desktop only for unchecked rows (hover to reveal) */
+@media (min-width: 768px) {
+    .item-row.status-unchecked .item-actions {
+        opacity: 0; transition: opacity 0.15s;
+    }
+    .item-row.status-unchecked:hover .item-actions { opacity: 1; }
 }
 
-.item-row:hover .item-actions {
-    opacity: 1;
-}
-
-.status-btn {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 6px;
+.act-btn {
+    padding: 0.25rem 0.55rem;
+    border: 1.5px solid transparent;
+    border-radius: var(--r-xs);
     cursor: pointer;
-    font-size: 0.85em;
-    transition: all 0.3s;
-    font-weight: 500;
+    font-size: 0.72rem;
+    font-weight: 700;
+    transition: all 0.15s;
+    white-space: nowrap;
+    background: none;
 }
-
-.status-btn.na {
-    background: #e0e0e0;
-    color: #666;
+.act-btn.na {
+    border-color: var(--muted-bd);
+    color: var(--muted);
 }
+.act-btn.na:hover { background: var(--muted-bg); color: var(--text); }
 
-.status-btn.standby {
-    background: #ffe0b2;
-    color: #f57c00;
+.act-btn.standby {
+    border-color: var(--warning-bd);
+    color: var(--warning);
 }
+.act-btn.standby:hover { background: var(--warning-bg); }
 
-.status-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+.act-btn.uncheck {
+    border-color: var(--border-2);
+    color: var(--text-muted);
 }
+.act-btn.uncheck:hover { background: var(--surface-2); }
 
+/* ── Notes textarea ──────────────────────────────────────── */
+/* FIX: notes live inside .item-content column — always part of flow */
 .item-notes {
-    margin-top: 10px;
-    padding: 8px 12px;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 0.9em;
-    resize: vertical;
-    min-height: 40px;
-    transition: all 0.3s;
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-xs);
+    font-size: 0.82rem;
+    color: var(--text);
+    background: var(--surface-2);
+    resize: vertical; min-height: 32px;
+    transition: border-color 0.15s;
+    font-family: inherit;
+    /* Hidden by default on desktop unless there is content */
+    display: none;
 }
-
 .item-notes:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.add-item-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 15px;
-    margin: 10px 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.add-item-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.add-item-form {
-    display: none;
-    padding: 15px;
-    background: #f5f7fa;
-    border-radius: 8px;
-    margin: 10px 0;
-}
-
-.add-item-form.active {
+    border-color: var(--primary);
     display: block;
-    animation: slideDown 0.3s ease;
+}
+.item-notes.has-content { display: block; }
+.item-row:focus-within .item-notes { display: block; }
+
+/* FIX: on mobile always show notes for all item types */
+@media (max-width: 767px) {
+    .item-notes { display: block; }
 }
 
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.add-item-form input {
-    width: calc(100% - 100px);
-    padding: 10px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    margin-right: 10px;
-}
-
-.add-item-form button {
-    padding: 10px 20px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 6px;
+/* ── Add item ────────────────────────────────────────────── */
+.add-item-toggle {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem;
+    width: 100%; padding: 0.55rem 1rem;
+    margin-top: 0.5rem;
+    border: 1.5px dashed var(--border-2);
+    background: none;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    font-size: 0.83rem; font-weight: 600;
     cursor: pointer;
-    font-weight: 500;
+    transition: all 0.15s;
 }
-
-@media (max-width: 768px) {
-    .trip-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .category-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
-    
-    .progress-bar {
-        width: 100px;
-    }
-    
-    .item-row {
-        flex-wrap: wrap;
-    }
-    
-    .item-actions {
-        width: 100%;
-        margin-top: 10px;
-        opacity: 1;
-    }
+.add-item-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-lt);
 }
+.add-item-form {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.22s cubic-bezier(.4,0,.2,1);
+    margin-top: 0.3rem;
+}
+.add-item-form.open { grid-template-rows: 1fr; }
+.add-item-form > div { overflow: hidden; }
+.add-item-inner {
+    padding: 0.6rem 0.1rem 0.2rem;
+    display: flex; gap: 0.5rem;
+}
+.add-item-inner input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid var(--border-2);
+    border-radius: var(--r-sm);
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+.add-item-inner input:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+}
+.add-item-inner .btn { flex-shrink: 0; }
 </style>
 
+<!-- ── Trip header ─────────────────────────────────────────── -->
 <div class="trip-header">
-    <h1 class="trip-title">{{ trip.name }}</h1>
-    <div class="trip-actions">
-        <a href="{{ url_for('dashboard') }}">← {{ t('dashboard') }}</a>
+    <div class="trip-header-icon">
+        <i class="fas fa-suitcase-rolling"></i>
+    </div>
+    <div class="trip-header-info">
+        <div class="trip-header-name">{{ trip.name }}</div>
+        <div class="trip-header-sub">
+            {% set total  = namespace(n=0) %}
+            {% set packed = namespace(n=0) %}
+            {% for cat, items in grouped.items() %}
+                {% set total.n  = total.n  + items|length %}
+                {% set packed.n = packed.n + items|selectattr('status','equalto','packed')|list|length %}
+            {% endfor %}
+            {{ packed.n }}/{{ total.n }} {{ t('progress_complete') }}
+        </div>
+    </div>
+    <a class="trip-header-back" href="{{ url_for('dashboard') }}">
+        ← {{ t('dashboard') }}
+    </a>
+</div>
+
+<!-- ── Search + filters ──────────────────────────────────────── -->
+<div class="search-wrap">
+    <div class="search-input-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="{{ t('search_items') }}">
+    </div>
+    <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">{{ t('all') }}</button>
+        <button class="filter-btn" data-filter="unchecked">{{ t('status_unchecked') }}</button>
+        <button class="filter-btn" data-filter="packed">{{ t('status_packed') }}</button>
+        <button class="filter-btn" data-filter="na">{{ t('status_na') }}</button>
+        <button class="filter-btn" data-filter="standby">{{ t('status_standby') }}</button>
     </div>
 </div>
 
-<div class="search-bar">
-    <input type="text" id="searchInput" placeholder=" {{ t('search_items') }}">
-
-    <button class="filter-btn active" data-filter="all">{{ t('all') }}</button>
-    <button class="filter-btn" data-filter="unchecked">{{ t('status_unchecked') }}</button>
-    <button class="filter-btn" data-filter="packed">{{ t('status_packed') }}</button>
-    <button class="filter-btn" data-filter="na">{{ t('status_na') }}</button>
-    <button class="filter-btn" data-filter="standby">{{ t('status_standby') }}</button>
-</div>
-
+<!-- ── Category sections ─────────────────────────────────────── -->
 {% if grouped %}
     {% for cat, items in grouped.items() %}
-    <div class="category-section" data-category="{{ cat.id }}">
-        <div class="category-header">
-            <h2 class="category-title">{{ get_name(cat) }}</h2>
-            <div class="category-stats">
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ (items|selectattr('status', 'equalto', 'packed')|list|length / items|length * 100) if items|length > 0 else 0 }}%"></div>
+    {# FIX: split into 4 groups so standby gets its own separator #}
+    {% set unchecked_items = items|selectattr('status','equalto','unchecked')|list %}
+    {% set standby_items   = items|selectattr('status','equalto','standby')|list %}
+    {% set packed_items    = items|selectattr('status','equalto','packed')|list %}
+    {% set na_items        = items|selectattr('status','equalto','na')|list %}
+    {% set pct = ((packed_items|length / items|length * 100)|round|int) if items|length > 0 else 0 %}
+
+    <div class="cat-section" data-category="{{ cat.id }}">
+
+        <!-- Category header / toggle -->
+        <button type="button"
+                class="cat-header"
+                aria-expanded="true"
+                aria-controls="cat-body-{{ cat.id }}">
+            <span class="cat-header-name">{{ get_name(cat) }}</span>
+            <div class="cat-header-progress">
+                <div class="cat-prog-track">
+                    <div class="cat-prog-fill {% if pct == 100 %}done{% endif %}"
+                         style="width:{{ pct }}%;"></div>
+                </div>
+                <span class="cat-prog-text">{{ packed_items|length }}/{{ items|length }}</span>
+            </div>
+            <i class="fas fa-chevron-down cat-chevron"></i>
+        </button>
+
+        <!-- Collapsible body -->
+        <div class="cat-body-collapse" id="cat-body-{{ cat.id }}">
+            <div>
+                <div class="cat-body">
+
+                    <!-- ① Unchecked items -->
+                    {% for ti in unchecked_items %}
+                    <div class="item-row status-unchecked"
+                         data-status="unchecked"
+                         data-item-id="{{ ti.id }}">
+
+                        <label class="item-cb">
+                            <input type="checkbox"
+                                   onchange="toggleItem({{ ti.id }}, this.checked)">
+                            <span class="item-cb-box"></span>
+                        </label>
+
+                        <div class="item-content">
+                            <div class="item-top">
+                                <span class="item-name">{{ get_name(ti.item) }}</span>
+                                <div class="item-actions">
+                                    <button class="act-btn standby"
+                                            onclick="setStatus({{ ti.id }}, 'standby')"
+                                            title="{{ t('status_standby') }}">⏸</button>
+                                    <button class="act-btn na"
+                                            onclick="setStatus({{ ti.id }}, 'na')"
+                                            title="{{ t('status_na') }}">N/A</button>
+                                </div>
+                            </div>
+                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                                      placeholder="{{ t('notes') }}"
+                                      onchange="updateNotes({{ ti.id }}, this.value)"
+                                      rows="1">{{ ti.notes or '' }}</textarea>
+                        </div>
                     </div>
-                    <span class="progress-text">
-                        {{ items|selectattr('status', 'equalto', 'packed')|list|length }}/{{ items|length }}
-                    </span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="category-items">
-            {% for ti in items %}
-            <div class="item-row status-{{ ti.status }}" data-status="{{ ti.status }}" data-item-id="{{ ti.id }}">
-                <label class="item-checkbox">
-                    <input type="checkbox" {{ 'checked' if ti.status == 'packed' else '' }} onchange="toggleItem({{ ti.id }}, this.checked)">
-                    <span class="checkmark"></span>
-                </label>
-                
-                <span class="item-name">{{ get_name(ti.item) }}</span>
-                
-                <div class="item-actions">
-                    <button class="status-btn na" onclick="setStatus({{ ti.id }}, 'na')" title="{{ t('status_na') }}">
-                        N/A
+                    {% endfor %}
+
+                    <!-- ② Standby separator + items (FIX: now separated) -->
+                    {% if standby_items %}
+                    <div class="done-separator">
+                        <i class="fas fa-pause-circle" style="color:var(--warning);"></i>
+                        {{ t('status_standby') }} ({{ standby_items|length }})
+                    </div>
+                    {% for ti in standby_items %}
+                    <div class="item-row status-standby"
+                         data-status="standby"
+                         data-item-id="{{ ti.id }}">
+
+                        <label class="item-cb">
+                            <input type="checkbox"
+                                   onchange="toggleItem({{ ti.id }}, this.checked)">
+                            <span class="item-cb-box"></span>
+                        </label>
+
+                        <div class="item-content">
+                            <div class="item-top">
+                                <span class="item-name">{{ get_name(ti.item) }}</span>
+                                <div class="item-actions">
+                                    <button class="act-btn uncheck"
+                                            onclick="setStatus({{ ti.id }}, 'unchecked')"
+                                            title="{{ t('status_unchecked') }}">↩</button>
+                                    <button class="act-btn na"
+                                            onclick="setStatus({{ ti.id }}, 'na')"
+                                            title="{{ t('status_na') }}">N/A</button>
+                                </div>
+                            </div>
+                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                                      placeholder="{{ t('notes') }}"
+                                      onchange="updateNotes({{ ti.id }}, this.value)"
+                                      rows="1">{{ ti.notes or '' }}</textarea>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- ③ Packed separator + compact rows -->
+                    {% if packed_items %}
+                    <div class="done-separator">
+                        <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                        {{ t('status_packed') }} ({{ packed_items|length }})
+                    </div>
+                    {% for ti in packed_items %}
+                    <div class="item-row status-packed"
+                         data-status="packed"
+                         data-item-id="{{ ti.id }}">
+
+                        <label class="item-cb">
+                            <input type="checkbox" checked
+                                   onchange="toggleItem({{ ti.id }}, this.checked)">
+                            <span class="item-cb-box"></span>
+                        </label>
+
+                        <div class="item-content">
+                            <div class="item-top">
+                                <span class="item-name">{{ get_name(ti.item) }}</span>
+                                <div class="item-actions">
+                                    <button class="act-btn uncheck"
+                                            onclick="setStatus({{ ti.id }}, 'unchecked')"
+                                            title="{{ t('status_unchecked') }}">↩</button>
+                                </div>
+                            </div>
+                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                                      placeholder="{{ t('notes') }}"
+                                      onchange="updateNotes({{ ti.id }}, this.value)"
+                                      rows="1">{{ ti.notes or '' }}</textarea>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- ④ N/A separator + micro rows -->
+                    {% if na_items %}
+                    <div class="done-separator">
+                        <i class="fas fa-ban" style="color:var(--muted);"></i>
+                        {{ t('status_na') }} ({{ na_items|length }})
+                    </div>
+                    {% for ti in na_items %}
+                    <div class="item-row status-na"
+                         data-status="na"
+                         data-item-id="{{ ti.id }}">
+
+                        <label class="item-cb">
+                            <input type="checkbox"
+                                   onchange="toggleItem({{ ti.id }}, this.checked)">
+                            <span class="item-cb-box"></span>
+                        </label>
+
+                        <div class="item-content">
+                            <div class="item-top">
+                                <span class="item-name">{{ get_name(ti.item) }}</span>
+                                <div class="item-actions">
+                                    <button class="act-btn uncheck"
+                                            onclick="setStatus({{ ti.id }}, 'unchecked')"
+                                            title="{{ t('status_unchecked') }}">↩</button>
+                                </div>
+                            </div>
+                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                                      placeholder="{{ t('notes') }}"
+                                      onchange="updateNotes({{ ti.id }}, this.value)"
+                                      rows="1">{{ ti.notes or '' }}</textarea>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Add item -->
+                    <button class="add-item-toggle"
+                            onclick="toggleAddForm({{ cat.id }})">
+                        <i class="fas fa-plus"></i> {{ t('add_item') }}
                     </button>
-                    <button class="status-btn standby" onclick="setStatus({{ ti.id }}, 'standby')" title="{{ t('status_standby') }}">
-                        ⏸ {{ t('status_standby') if lang == 'es' else 'Standby' }}
-                    </button>
+                    <div class="add-item-form" id="add-form-{{ cat.id }}">
+                        <div>
+                            <div class="add-item-inner">
+                                <form onsubmit="addQuickItem(event, {{ cat.id }})"
+                                      style="display:flex;gap:0.5rem;flex:1;">
+                                    <input type="text"
+                                           placeholder="{{ t('add_item') }}…"
+                                           required>
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <textarea class="item-notes" 
-                          placeholder="{{ t('notes') }}" 
-                          onchange="updateNotes({{ ti.id }}, this.value)"
-                          rows="1">{{ ti.notes }}</textarea>
-            </div>
-            
-                
-       
-            {% endfor %}
-            
-            <button class="add-item-btn" onclick="toggleAddForm({{ cat.id }})">
-                <span style="font-size: 1.5em;">+</span>
-                {{ t('add_item') }}
-            </button>
-            
-            <div class="add-item-form" id="add-form-{{ cat.id }}">
-                <form onsubmit="addQuickItem(event, {{ cat.id }})">
-                    <input type="text" placeholder="{{ t('add_item') }}..." required>
-                    <button type="submit">{{ t('add_item') }}</button>
-                </form>
             </div>
         </div>
     </div>
     {% endfor %}
 {% else %}
-    <div style="text-align: center; padding: 40px; color: #666;">
+    <div style="text-align:center;padding:3rem 1rem;color:var(--text-muted);">
+        <i class="fas fa-box-open"
+           style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:.4;"></i>
         <p>{{ t('no_items') }}</p>
     </div>
 {% endif %}
 
 <script>
-const CSRF_TOKEN = '{{ csrf_token() }}';
-const TRIP_ID = {{ trip.id }};
-
+const CSRF_TOKEN      = '{{ csrf_token() }}';
+const TRIP_ID         = {{ trip.id }};
 const URL_UPDATE_ITEM = (id) => '{{ url_for("update_item", ti_id=0) }}'.replace('/0', '/' + id);
-const URL_ADD_TRIP_ITEM = '{{ url_for("add_trip_item") }}';
+const URL_ADD_ITEM    = '{{ url_for("add_trip_item") }}';
 
+/* ── API call ─────────────────────────────────────────────── */
 function updateItem(itemId, data) {
     fetch(URL_UPDATE_ITEM(itemId), {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': CSRF_TOKEN
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(result => {
-        if (result.success) {
-            const itemRow = document.querySelector(`[data-item-id="${itemId}"]`);
-            if (itemRow && data.status) {
-                itemRow.className = `item-row status-${data.status}`;
-                itemRow.dataset.status = data.status;
-
-                setTimeout(() => {
-                    const categorySection = itemRow.closest('.category-section');
-                    const addButton = categorySection.querySelector('.add-item-btn');
-                    const addForm = categorySection.querySelector('.add-item-form');
-                    const items = Array.from(categorySection.querySelectorAll('.item-row'));
-
-                    items.sort((a, b) => {
-                        const order = {'unchecked': 0, 'standby': 1, 'packed': 2, 'na': 3};
-                        return order[a.dataset.status] - order[b.dataset.status];
-                    });
-
-                    const container = categorySection.querySelector('.category-items');
-                    // El textarea está DENTRO de .item-row, no es un hermano
-                    items.forEach(item => container.appendChild(item));
-
-                    if (addButton) container.appendChild(addButton);
-                    if (addForm) container.appendChild(addForm);
-
-                    updateProgressBar(categorySection);
-                }, 300);
-            }
+        if (result.success && data.status) {
+            window.location.reload();
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(e => console.error('Error:', e));
 }
 
-function toggleItem(itemId, isPacked) {
-    updateItem(itemId, { status: isPacked ? 'packed' : 'unchecked' });
+function toggleItem(id, packed) { updateItem(id, { status: packed ? 'packed' : 'unchecked' }); }
+function setStatus(id, status)  { updateItem(id, { status }); }
+function updateNotes(id, notes) {
+    fetch(URL_UPDATE_ITEM(id), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ notes })
+    }).catch(e => console.error('Error:', e));
 }
 
-function setStatus(itemId, status) {
-    updateItem(itemId, { status: status });
+/* ── Add form toggle ─────────────────────────────────────── */
+function toggleAddForm(catId) {
+    const form = document.getElementById(`add-form-${catId}`);
+    const open = form.classList.toggle('open');
+    if (open) form.querySelector('input')?.focus();
 }
 
-function updateNotes(itemId, notes) {
-    updateItem(itemId, { notes: notes });
-}
-
-function toggleAddForm(categoryId) {
-    const form = document.getElementById(`add-form-${categoryId}`);
-    form.classList.toggle('active');
-    if (form.classList.contains('active')) {
-        form.querySelector('input').focus();
-    }
-}
-
+/* ── Add quick item ──────────────────────────────────────── */
 function addQuickItem(event, categoryId) {
     event.preventDefault();
-    const input = event.target.querySelector('input');
+    const input    = event.target.querySelector('input');
     const itemName = input.value.trim();
     if (!itemName) return;
-
-    fetch(URL_ADD_TRIP_ITEM, {
+    fetch(URL_ADD_ITEM, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': CSRF_TOKEN
-        },
-        body: JSON.stringify({
-            trip_id: TRIP_ID,
-            category_id: categoryId,
-            item_name: itemName
-        })
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ trip_id: TRIP_ID, category_id: categoryId, item_name: itemName })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(result => {
-        if (result.success) {
-            window.location.reload();
-        } else {
-            alert('{{ t("error_adding_item") }}: ' + (result.error || ''));
-        }
+        if (result.success) { window.location.reload(); }
+        else { alert('{{ t("error_adding_item") }}: ' + (result.error || '')); }
     })
     .catch(() => alert('{{ t("error_adding_item") }}'));
-
     input.value = '';
 }
 
-function updateProgressBar(categorySection) {
-    const items = categorySection.querySelectorAll('.item-row');
-    const packed = categorySection.querySelectorAll('.item-row.status-packed');
-    const percentage = items.length > 0 ? (packed.length / items.length * 100) : 0;
-
-    const progressBar = categorySection.querySelector('.progress-fill');
-    const progressText = categorySection.querySelector('.progress-text');
-
-    progressBar.style.width = `${percentage}%`;
-    progressText.textContent = `${packed.length}/${items.length}`;
-}
-
-// Search
-document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    document.querySelectorAll('.item-row').forEach(item => {
-        const itemName = item.querySelector('.item-name').textContent.toLowerCase();
-        const notes = (item.querySelector('.item-notes')?.value || '').toLowerCase();
-        item.style.display = (itemName.includes(searchTerm) || notes.includes(searchTerm))
-            ? 'flex' : 'none';
+/* ── Category accordion toggle ───────────────────────────── */
+document.querySelectorAll('.cat-header').forEach(header => {
+    header.addEventListener('click', () => {
+        const bodyId = header.getAttribute('aria-controls');
+        const body   = document.getElementById(bodyId);
+        const isOpen = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!isOpen));
+        body.classList.toggle('collapsed', isOpen);
     });
 });
 
-// Filters
+/* ── Search ──────────────────────────────────────────────── */
+document.getElementById('searchInput').addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.item-row').forEach(row => {
+        const name  = row.querySelector('.item-name')?.textContent.toLowerCase() || '';
+        const notes = row.querySelector('.item-notes')?.value?.toLowerCase()    || '';
+        row.style.display = (!q || name.includes(q) || notes.includes(q)) ? '' : 'none';
+    });
+    document.querySelectorAll('.done-separator').forEach(sep => {
+        const next = sep.nextElementSibling;
+        sep.style.display = (next && next.style.display !== 'none') ? '' : 'none';
+    });
+});
+
+/* ── Filters ─────────────────────────────────────────────── */
 document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         const filter = this.dataset.filter;
-        document.querySelectorAll('.item-row').forEach(item => {
-            item.style.display = (filter === 'all' || item.dataset.status === filter)
-                ? 'flex' : 'none';
+        document.querySelectorAll('.item-row').forEach(row => {
+            row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
+        });
+        document.querySelectorAll('.done-separator').forEach(sep => {
+            let show = false;
+            let el = sep.nextElementSibling;
+            while (el && el.classList.contains('item-row')) {
+                if (el.style.display !== 'none') { show = true; break; }
+                el = el.nextElementSibling;
+            }
+            sep.style.display = show ? '' : 'none';
         });
     });
 });
