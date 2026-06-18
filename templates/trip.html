@@ -1048,6 +1048,42 @@ function toggleNotesForm(itemId, buttonEl) {
     }
 }
 
+   
+/* ── Add form toggle ─────────────────────────────────────── */
+
+function toggleAddForm(catId) {
+
+    const form = document.getElementById(`add-form-${catId}`);
+    const open = form.classList.toggle('open');
+    if (open) form.querySelector('input')?.focus();
+
+}
+
+
+/* ── Add quick item ──────────────────────────────────────── */
+
+function addQuickItem(event, categoryId) {
+
+    event.preventDefault();
+    const input    = event.target.querySelector('input');
+    const itemName = input.value.trim();
+    if (!itemName) return;
+   
+    fetch(URL_ADD_ITEM, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+        body: JSON.stringify({ trip_id: TRIP_ID, category_id: categoryId, item_name: itemName })
+    })
+    .then(r => r.json())
+    .then(result => {
+        if (result.success) { window.location.reload(); }
+        else { alert('{{ t("error_adding_item") }}: ' + (result.error || '')); }
+    })
+    .catch(() => alert('{{ t("error_adding_item") }}'));
+    input.value = '';
+
+} 
+
 </script>
 
 {% endblock %}
