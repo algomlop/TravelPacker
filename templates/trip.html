@@ -185,10 +185,10 @@
 }
 .item-row:hover { background: var(--surface-2); }
 
-/* FIX: inner content wrapper — name + actions on one line, notes below */
 .item-content {
     flex: 1;
     min-width: 0;
+    position: relative; /* ancla interna */
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -277,8 +277,7 @@
 .item-name {
     flex: 1;
     font-size: 0.95rem; font-weight: 500; color: var(--text);
-    min-width: 0;
-    word-break: break-word;  /* FIX: wrap long names instead of overflowing */
+    min-width: 60px;
 }
 .item-row.status-packed .item-name {
     font-size: 0.82rem; text-decoration: line-through;
@@ -293,8 +292,9 @@
 /* ── Item action buttons ─────────────────────────────────── */
 .item-actions {
     display: flex; gap: 0.3rem; flex-shrink: 0;
+    align-items: center;
 }
-/* FIX: hide on desktop only for unchecked rows (hover to reveal) */
+
 @media (min-width: 768px) {
     .item-row.status-unchecked .item-actions {
         opacity: 0; transition: opacity 0.15s;
@@ -331,30 +331,114 @@
 }
 .act-btn.uncheck:hover { background: var(--surface-2); }
 
-/* ── Notes textarea ──────────────────────────────────────── */
-.item-notes {
 
+.act-btn.notes-toggle {
+    border-color: var(--border-2);
+    color: var(--text-muted);
+    padding: 0.25rem 0.45rem; 
+}
+.act-btn.notes-toggle:hover,
+.act-btn.notes-toggle.active {
+    background: var(--primary-lt);
+    color: var(--primary);
+    border-color: var(--primary-lt);
+}
+
+.act-btn.notes-toggle.has-notes {
+    color: var(--primary);
+}
+
+/* ── Notes textarea ──────────────────────────────────────── */
+/* ── Notes textarea & Preview ────────────────────────────── */
+/* La vista previa elegante debajo del nombre */
+.notes-preview {
+    display: none; /* Oculto por defecto si no hay nota */
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.8;
+    margin-top: 0.1rem;
+    padding-left: 2px;
+    cursor: pointer;
+    
+    /* Magia para cortar el texto con "..." si no cabe en una sola línea */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+/* Si la nota tiene contenido, la hacemos visible */
+.notes-preview.is-visible {
+    display: block;
+}
+
+/* El cuadro de edición de la nota */
+.item-notes {
+    width: 100%;
+    margin-top: 0.5rem;
     border: 1.5px solid var(--border);
     border-radius: var(--r-xs);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     color: var(--text);
-    background: var(--surface-2);
+    background: var(--surface);
     resize: vertical; 
-    transition: border-color 0.15s;
+    transition: all 0.2s ease;
     font-family: inherit;
-
+    padding: 0.5rem;
+    display: none;
 }
+
 .item-notes:focus {
     outline: none;
     border-color: var(--primary);
-    display: block;
 }
-.item-notes.has-content { display: block; }
-.item-row:focus-within .item-notes { display: block; }
 
-/* FIX: on mobile always show notes for all item types */
-@media (max-width: 767px) {
-    .item-notes { display: block; }
+/* Cuando el editor está abierto, se muestra y animamos su aparición */
+.item-notes.is-open {
+    display: block;
+    animation: fadeInNote 0.15s ease-out;
+}
+
+@keyframes fadeInNote {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hacemos que el botón cambie de color si tiene nota guardada */
+.act-btn.notes-toggle.has-notes {
+    color: var(--primary);
+}
+.act-btn.notes-toggle.active {
+    background: var(--primary-lt);
+    color: var(--primary);
+}
+@media (min-width: 768px) {
+    .item-content {
+        display: grid;
+        grid-template-columns: 1fr 150px;
+        gap: 0.5rem;
+        align-items: start;
+    }
+
+    .item-top {
+        padding-right: 0;
+        grid-column: 1;
+    }
+
+    .item-notes {
+        grid-column: 2;
+        position: static;
+        width: 100%;
+        margin-top: 0;
+        padding: 0px;
+        display: block !important;
+    }
+    .act-btn.notes-toggle {
+        display: none !important;
+    }
+    .notes-preview {
+        display: none !important;
+    }
 }
 
 /* ── Add item ────────────────────────────────────────────── */
@@ -479,12 +563,12 @@
                     <!-- ① Unchecked items -->
                     {% for ti in unchecked_items %}
                     <div class="item-row status-unchecked"
-                         data-status="unchecked"
-                         data-item-id="{{ ti.id }}">
+                        data-status="unchecked"
+                        data-item-id="{{ ti.id }}">
 
                         <label class="item-cb">
                             <input type="checkbox" autocomplete="off"
-                                   onchange="toggleItem({{ ti.id }}, this.checked)">
+                                onchange="toggleItem({{ ti.id }}, this.checked)">
                             <span class="item-cb-box"></span>
                         </label>
 
@@ -492,6 +576,13 @@
                             <div class="item-top">
                                 <span class="item-name">{{ get_name(ti.item) }}</span>
                                 <div class="item-actions">
+                                    <button type="button" 
+                                            class="act-btn notes-toggle {% if ti.notes %}has-notes{% endif %}"
+                                            onclick="toggleNotesForm({{ ti.id }}, this)"
+                                            title="{{ t('notes') }}">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </button>
+
                                     <button class="act-btn standby"
                                             onclick="setStatus({{ ti.id }}, 'standby')"
                                             title="{{ t('status_standby') }}">⏸</button>
@@ -499,21 +590,29 @@
                                             onclick="setStatus({{ ti.id }}, 'na')"
                                             title="{{ t('status_na') }}">N/A</button>
                                 </div>
-                            
-                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
-                                      placeholder="{{ t('notes') }}"
-                                      onchange="updateNotes({{ ti.id }}, this.value)"
-                                      rows="1">{{ ti.notes or '' }}</textarea>
+                            </div> 
+                            <div id="preview-{{ ti.id }}" 
+                                class="notes-preview {% if ti.notes %}is-visible{% endif %}"
+                                onclick="toggleNotesForm({{ ti.id }}, document.querySelector('.item-row[data-item-id=\'{{ ti.id }}\'] .notes-toggle'))">
+                                {{ ti.notes or '' }}
                             </div>
+
+                    
+                            <textarea id="notes-{{ ti.id }}"
+                                    class="item-notes"
+                                    placeholder="{{ t('notes') }}..."
+                                    onchange="updateNotes({{ ti.id }}, this.value)"
+                                    rows="1">{{ ti.notes or '' }}</textarea>
+
                         </div>
                     </div>
                     {% endfor %}
 
-                    <!-- ② Standby separator + items (FIX: now separated) -->
+                    <!-- ② Standby separator + items  -->
                     {% if standby_items %}
-                    <div class="done-separator">
+                    <div class="done-separator" data-status="standby" data-label="{{ t('status_standby') }}">
                         <i class="fas fa-pause-circle" style="color:var(--warning);"></i>
-                        {{ t('status_standby') }} ({{ standby_items|length }})
+                        {{ t('status_standby') }} (<span class="sep-count">{{ standby_items|length }}</span>)
                     </div>
                     {% for ti in standby_items %}
                     <div class="item-row status-standby"
@@ -530,6 +629,12 @@
                             <div class="item-top">
                                 <span class="item-name">{{ get_name(ti.item) }}</span>
                                 <div class="item-actions">
+                                    <button type="button" 
+                                            class="act-btn notes-toggle {% if ti.notes %}has-notes{% endif %}"
+                                            onclick="toggleNotesForm({{ ti.id }}, this)"
+                                            title="{{ t('notes') }}">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </button>
                                     <button class="act-btn uncheck"
                                             onclick="setStatus({{ ti.id }}, 'unchecked')"
                                             title="{{ t('status_unchecked') }}">↩</button>
@@ -538,11 +643,20 @@
                                             title="{{ t('status_na') }}">N/A</button>
                                 </div>
                             
-                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
-                                      placeholder="{{ t('notes') }}"
-                                      onchange="updateNotes({{ ti.id }}, this.value)"
-                                      rows="1">{{ ti.notes or '' }}</textarea>
+                           
                             </div>
+                            <div id="preview-{{ ti.id }}" 
+                                class="notes-preview {% if ti.notes %}is-visible{% endif %}"
+                                onclick="toggleNotesForm({{ ti.id }}, document.querySelector('.item-row[data-item-id=\'{{ ti.id }}\'] .notes-toggle'))">
+                                {{ ti.notes or '' }}
+                            </div>
+
+                    
+                            <textarea id="notes-{{ ti.id }}"
+                                    class="item-notes"
+                                    placeholder="{{ t('notes') }}..."
+                                    onchange="updateNotes({{ ti.id }}, this.value)"
+                                    rows="1">{{ ti.notes or '' }}</textarea>
                         </div>
                     </div>
                     {% endfor %}
@@ -550,9 +664,9 @@
 
                     <!-- ③ Packed separator + compact rows -->
                     {% if packed_items %}
-                    <div class="done-separator">
+                    <div class="done-separator" data-status="packed" data-label="{{ t('status_packed') }}">
                         <i class="fas fa-check-circle" style="color:var(--success);"></i>
-                        {{ t('status_packed') }} ({{ packed_items|length }})
+                        {{ t('status_packed') }} (<span class="sep-count">{{ packed_items|length }}</span>)
                     </div>
                     {% for ti in packed_items %}
                     <div class="item-row status-packed"
@@ -568,13 +682,31 @@
                         <div class="item-content">
                             <div class="item-top">
                                 <span class="item-name">{{ get_name(ti.item) }}</span>
+                                <div class="item-actions">
+                                    <button type="button" 
+                                            class="act-btn notes-toggle {% if ti.notes %}has-notes{% endif %}"
+                                            onclick="toggleNotesForm({{ ti.id }}, this)"
+                                            title="{{ t('notes') }}">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </button>
+                                </div>
+
                                 
                             
-                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
-                                      placeholder="{{ t('notes') }}"
-                                      onchange="updateNotes({{ ti.id }}, this.value)"
-                                      rows="1">{{ ti.notes or '' }}</textarea>
+                                
                             </div>
+                            <div id="preview-{{ ti.id }}" 
+                                class="notes-preview {% if ti.notes %}is-visible{% endif %}"
+                                onclick="toggleNotesForm({{ ti.id }}, document.querySelector('.item-row[data-item-id=\'{{ ti.id }}\'] .notes-toggle'))">
+                                {{ ti.notes or '' }}
+                            </div>
+
+                    
+                            <textarea id="notes-{{ ti.id }}"
+                                    class="item-notes"
+                                    placeholder="{{ t('notes') }}..."
+                                    onchange="updateNotes({{ ti.id }}, this.value)"
+                                    rows="1">{{ ti.notes or '' }}</textarea>
                         </div>
                     </div>
                     {% endfor %}
@@ -582,9 +714,9 @@
 
                     <!-- ④ N/A separator + micro rows -->
                     {% if na_items %}
-                    <div class="done-separator">
+                    <div class="done-separator" data-status="na" data-label="{{ t('status_na') }}">
                         <i class="fas fa-ban" style="color:var(--muted);"></i>
-                        {{ t('status_na') }} ({{ na_items|length }})
+                        {{ t('status_na') }} (<span class="sep-count">{{ na_items|length }}</span>)
                     </div>
                     {% for ti in na_items %}
                     <div class="item-row status-na"
@@ -601,16 +733,31 @@
                             <div class="item-top">
                                 <span class="item-name">{{ get_name(ti.item) }}</span>
                                 <div class="item-actions">
+                                    <button type="button" 
+                                            class="act-btn notes-toggle {% if ti.notes %}has-notes{% endif %}"
+                                            onclick="toggleNotesForm({{ ti.id }}, this)"
+                                            title="{{ t('notes') }}">
+                                        <i class="fas fa-sticky-note"></i>
+                                    </button>
                                     <button class="act-btn uncheck"
                                             onclick="setStatus({{ ti.id }}, 'unchecked')"
                                             title="{{ t('status_unchecked') }}">↩</button>
                                 </div>
                             
-                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
-                                      placeholder="{{ t('notes') }}"
-                                      onchange="updateNotes({{ ti.id }}, this.value)"
-                                      rows="1">{{ ti.notes or '' }}</textarea>
+                             
                             </div>
+                            <div id="preview-{{ ti.id }}" 
+                                class="notes-preview {% if ti.notes %}is-visible{% endif %}"
+                                onclick="toggleNotesForm({{ ti.id }}, document.querySelector('.item-row[data-item-id=\'{{ ti.id }}\'] .notes-toggle'))">
+                                {{ ti.notes or '' }}
+                            </div>
+
+                    
+                            <textarea id="notes-{{ ti.id }}"
+                                    class="item-notes"
+                                    placeholder="{{ t('notes') }}..."
+                                    onchange="updateNotes({{ ti.id }}, this.value)"
+                                    rows="1">{{ ti.notes or '' }}</textarea>
                         </div>
                     </div>
                     {% endfor %}
@@ -656,104 +803,251 @@ const TRIP_ID         = {{ trip.id }};
 const URL_UPDATE_ITEM = (id) => '{{ url_for("update_item", ti_id=0) }}'.replace('/0', '/' + id);
 const URL_ADD_ITEM    = '{{ url_for("add_trip_item") }}';
 
-/* ── API call ─────────────────────────────────────────────── */
-function updateItem(itemId, data) {
-    fetch(URL_UPDATE_ITEM(itemId), {
+const STATUS_LABELS = {
+    standby: {{ t('status_standby')|tojson }},
+    packed: {{ t('status_packed')|tojson }},
+    na: {{ t('status_na')|tojson }},
+};
+
+const pendingNotes = new Map();
+
+function updateNotes(itemId, value) {
+    const promise = fetch(URL_UPDATE_ITEM(itemId), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify(data)
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({ notes: value })
     })
     .then(r => r.json())
-    .then(result => {
-        if (result.success && data.status) {
-            window.location.reload();
+    .finally(() => {
+        pendingNotes.delete(itemId);
+    });
+
+    pendingNotes.set(itemId, promise);
+    return promise;
+}
+
+async function updateItem(itemId, data) {
+    try {
+        const pending = pendingNotes.get(itemId);
+        if (pending) {
+            try { await pending; } catch (_) {}
         }
-    })
-    .catch(e => console.error('Error:', e));
+
+        const response = await fetch(URL_UPDATE_ITEM(itemId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': CSRF_TOKEN
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (!result.success || !data.status) return;
+
+        const row = document.querySelector(`.item-row[data-item-id="${itemId}"]`);
+        if (!row) return;
+
+                row.dataset.status = data.status;
+        row.classList.remove('status-unchecked', 'status-standby', 'status-packed', 'status-na');
+        row.classList.add(`status-${data.status}`);
+
+        const cb = row.querySelector('.item-cb input');
+        if (cb) cb.checked = data.status === 'packed';
+
+        updateRowActions(row, itemId, data.status);
+
+        const catBody = row.closest('.cat-body');
+        if (catBody) rebuildCategoryBody(catBody);
+
+    } catch (e) {
+        console.error('Error:', e);
+    }
+}
+
+function rebuildCategoryBody(catBody) {
+    const rows = [...catBody.querySelectorAll('.item-row')];
+    const grouped = {
+        unchecked: [],
+        standby: [],
+        packed: [],
+        na: []
+    };
+
+    for (const row of rows) {
+        const s = row.dataset.status;
+        if (grouped[s]) grouped[s].push(row);
+    }
+
+    const addToggle = catBody.querySelector('.add-item-toggle');
+    const addForm = catBody.querySelector('.add-item-form');
+
+    catBody.querySelectorAll('.done-separator').forEach(el => el.remove());
+    rows.forEach(row => row.remove());
+
+    const order = ['unchecked', 'standby', 'packed', 'na'];
+
+    for (const status of order) {
+        if (!grouped[status].length) continue;
+
+        if (status !== 'unchecked') {
+            catBody.appendChild(makeSeparator(status, grouped[status].length));
+        }
+
+        grouped[status].forEach(row => catBody.appendChild(row));
+    }
+
+    if (addToggle) catBody.appendChild(addToggle);
+    if (addForm) catBody.appendChild(addForm);
+
+    refreshCategoryCounters(catBody.closest('.cat-section'));
+}
+
+function makeSeparator(status, count) {
+    const div = document.createElement('div');
+    div.className = 'done-separator';
+    div.dataset.status = status;
+    div.dataset.label = STATUS_LABELS[status] || status;
+
+    const icon = {
+        standby: 'fas fa-pause-circle',
+        packed: 'fas fa-check-circle',
+        na: 'fas fa-ban'
+    }[status] || 'fas fa-circle';
+
+    const color = {
+        standby: 'var(--warning)',
+        packed: 'var(--success)',
+        na: 'var(--muted)'
+    }[status] || 'var(--muted)';
+
+    div.innerHTML = `<i class="${icon}" style="color:${color};"></i> ${div.dataset.label} (<span class="sep-count">${count}</span>)`;
+    return div;
+}
+
+function refreshCategoryCounters(catSection) {
+    if (!catSection) return;
+
+    const rows = catSection.querySelectorAll('.item-row');
+    const total = rows.length;
+    const packed = catSection.querySelectorAll('.item-row.status-packed').length;
+    const pct = total ? Math.round((packed / total) * 100) : 0;
+
+    const text = catSection.querySelector('.cat-prog-text');
+    const fill = catSection.querySelector('.cat-prog-fill');
+
+    if (text) text.textContent = `${packed}/${total}`;
+    if (fill) {
+        fill.style.width = `${pct}%`;
+        fill.classList.toggle('done', pct === 100);
+    }
+
+    ['standby', 'packed', 'na'].forEach(status => {
+        const sep = catSection.querySelector(`.done-separator[data-status="${status}"]`);
+        if (!sep) return;
+
+        const count = catSection.querySelectorAll(`.item-row.status-${status}`).length;
+        const span = sep.querySelector('.sep-count');
+        if (span) span.textContent = count;
+        sep.style.display = count ? '' : 'none';
+    });
 }
 
 function toggleItem(id, packed) { updateItem(id, { status: packed ? 'packed' : 'unchecked' }); }
 function setStatus(id, status)  { updateItem(id, { status }); }
-function updateNotes(id, notes) {
-    fetch(URL_UPDATE_ITEM(id), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ notes })
-    }).catch(e => console.error('Error:', e));
-}
 
-/* ── Add form toggle ─────────────────────────────────────── */
-function toggleAddForm(catId) {
-    const form = document.getElementById(`add-form-${catId}`);
-    const open = form.classList.toggle('open');
-    if (open) form.querySelector('input')?.focus();
-}
 
-/* ── Add quick item ──────────────────────────────────────── */
-function addQuickItem(event, categoryId) {
-    event.preventDefault();
-    const input    = event.target.querySelector('input');
-    const itemName = input.value.trim();
-    if (!itemName) return;
-    fetch(URL_ADD_ITEM, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ trip_id: TRIP_ID, category_id: categoryId, item_name: itemName })
-    })
-    .then(r => r.json())
-    .then(result => {
-        if (result.success) { window.location.reload(); }
-        else { alert('{{ t("error_adding_item") }}: ' + (result.error || '')); }
-    })
-    .catch(() => alert('{{ t("error_adding_item") }}'));
-    input.value = '';
-}
-
-/* ── Category accordion toggle ───────────────────────────── */
 document.querySelectorAll('.cat-header').forEach(header => {
     header.addEventListener('click', () => {
         const bodyId = header.getAttribute('aria-controls');
-        const body   = document.getElementById(bodyId);
-        const isOpen = header.getAttribute('aria-expanded') === 'true';
-        header.setAttribute('aria-expanded', String(!isOpen));
-        body.classList.toggle('collapsed', isOpen);
+        const body = document.getElementById(bodyId);
+        if (!body) return;
+
+        const isExpanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!isExpanded));
+        body.classList.toggle('collapsed', isExpanded);
     });
 });
 
-/* ── Search ──────────────────────────────────────────────── */
-document.getElementById('searchInput').addEventListener('input', function () {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('.item-row').forEach(row => {
-        const name  = row.querySelector('.item-name')?.textContent.toLowerCase() || '';
-        const notes = row.querySelector('.item-notes')?.value?.toLowerCase()    || '';
-        row.style.display = (!q || name.includes(q) || notes.includes(q)) ? '' : 'none';
-    });
-    document.querySelectorAll('.done-separator').forEach(sep => {
-        const next = sep.nextElementSibling;
-        sep.style.display = (next && next.style.display !== 'none') ? '' : 'none';
-    });
-});
 
-/* ── Filters ─────────────────────────────────────────────── */
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const filter = this.dataset.filter;
-        document.querySelectorAll('.item-row').forEach(row => {
-            row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
-        });
-        document.querySelectorAll('.done-separator').forEach(sep => {
-            let show = false;
-            let el = sep.nextElementSibling;
-            while (el && el.classList.contains('item-row')) {
-                if (el.style.display !== 'none') { show = true; break; }
-                el = el.nextElementSibling;
-            }
-            sep.style.display = show ? '' : 'none';
-        });
-    });
-});
+function updateRowActions(row, itemId, status) {
+    const actions = row.querySelector('.item-actions');
+    if (!actions) return;
+
+    const noteBtn = `
+        <button type="button"
+                class="act-btn notes-toggle ${row.querySelector('.notes-preview')?.textContent.trim() ? 'has-notes' : ''}"
+                onclick="toggleNotesForm(${itemId}, this)"
+                title="${STATUS_LABELS.notes || 'Notes'}">
+            <i class="fas fa-sticky-note"></i>
+        </button>
+    `;
+
+    const htmlByStatus = {
+        unchecked: `
+            ${noteBtn}
+            <button class="act-btn standby"
+                    onclick="setStatus(${itemId}, 'standby')"
+                    title="${STATUS_LABELS.standby}">⏸</button>
+            <button class="act-btn na"
+                    onclick="setStatus(${itemId}, 'na')"
+                    title="${STATUS_LABELS.na}">N/A</button>
+        `,
+        standby: `
+            ${noteBtn}
+            <button class="act-btn uncheck"
+                    onclick="setStatus(${itemId}, 'unchecked')"
+                    title="${STATUS_LABELS.unchecked || 'Unchecked'}">↩</button>
+            <button class="act-btn na"
+                    onclick="setStatus(${itemId}, 'na')"
+                    title="${STATUS_LABELS.na}">N/A</button>
+        `,
+        packed: `
+            ${noteBtn}
+        `,
+        na: `
+            ${noteBtn}
+            <button class="act-btn uncheck"
+                    onclick="setStatus(${itemId}, 'unchecked')"
+                    title="${STATUS_LABELS.unchecked || 'Unchecked'}">↩</button>
+        `
+    };
+
+    actions.innerHTML = htmlByStatus[status] || noteBtn;
+}
+
+function toggleNotesForm(itemId, buttonEl) {
+    const textarea = document.getElementById(`notes-${itemId}`);
+    const preview = document.getElementById(`preview-${itemId}`);
+    if (!textarea || !preview) return;
+
+    // Cambiamos el estado de apertura
+    const isOpen = textarea.classList.toggle('is-open');
+    buttonEl.classList.toggle('active', isOpen);
+
+    if (isOpen) {
+        // Al abrir: ocultamos la vista previa corta y enfocamos el textarea
+        preview.style.display = 'none';
+        textarea.focus();
+        // Auto-ajustamos la altura del textarea según su contenido interno
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    } else {
+        // Al cerrar: actualizamos el texto de la vista previa con lo que el usuario escribió
+        preview.textContent = textarea.value;
+        if (textarea.value.trim().length > 0) {
+            preview.style.display = 'block';
+            buttonEl.classList.add('has-notes');
+        } else {
+            preview.style.display = 'none';
+            buttonEl.classList.remove('has-notes');
+        }
+    }
+}
+
 </script>
 
 {% endblock %}
