@@ -332,20 +332,17 @@
 .act-btn.uncheck:hover { background: var(--surface-2); }
 
 /* ── Notes textarea ──────────────────────────────────────── */
-/* FIX: notes live inside .item-content column — always part of flow */
 .item-notes {
-    width: 100%;
-    padding: 0.4rem 0.6rem;
+
     border: 1.5px solid var(--border);
     border-radius: var(--r-xs);
     font-size: 0.82rem;
     color: var(--text);
     background: var(--surface-2);
-    resize: vertical; min-height: 32px;
+    resize: vertical; 
     transition: border-color 0.15s;
     font-family: inherit;
-    /* Hidden by default on desktop unless there is content */
-    display: none;
+
 }
 .item-notes:focus {
     outline: none;
@@ -486,7 +483,7 @@
                          data-item-id="{{ ti.id }}">
 
                         <label class="item-cb">
-                            <input type="checkbox"
+                            <input type="checkbox" autocomplete="off"
                                    onchange="toggleItem({{ ti.id }}, this.checked)">
                             <span class="item-cb-box"></span>
                         </label>
@@ -502,11 +499,12 @@
                                             onclick="setStatus({{ ti.id }}, 'na')"
                                             title="{{ t('status_na') }}">N/A</button>
                                 </div>
-                            </div>
-                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                            
+                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
                                       placeholder="{{ t('notes') }}"
                                       onchange="updateNotes({{ ti.id }}, this.value)"
                                       rows="1">{{ ti.notes or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -523,7 +521,7 @@
                          data-item-id="{{ ti.id }}">
 
                         <label class="item-cb">
-                            <input type="checkbox"
+                            <input type="checkbox" autocomplete="off"
                                    onchange="toggleItem({{ ti.id }}, this.checked)">
                             <span class="item-cb-box"></span>
                         </label>
@@ -539,11 +537,12 @@
                                             onclick="setStatus({{ ti.id }}, 'na')"
                                             title="{{ t('status_na') }}">N/A</button>
                                 </div>
-                            </div>
+                            
                             <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
                                       placeholder="{{ t('notes') }}"
                                       onchange="updateNotes({{ ti.id }}, this.value)"
                                       rows="1">{{ ti.notes or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -561,7 +560,7 @@
                          data-item-id="{{ ti.id }}">
 
                         <label class="item-cb">
-                            <input type="checkbox" checked
+                            <input type="checkbox" checked autocomplete="off" 
                                    onchange="toggleItem({{ ti.id }}, this.checked)">
                             <span class="item-cb-box"></span>
                         </label>
@@ -569,16 +568,13 @@
                         <div class="item-content">
                             <div class="item-top">
                                 <span class="item-name">{{ get_name(ti.item) }}</span>
-                                <div class="item-actions">
-                                    <button class="act-btn uncheck"
-                                            onclick="setStatus({{ ti.id }}, 'unchecked')"
-                                            title="{{ t('status_unchecked') }}">↩</button>
-                                </div>
-                            </div>
-                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                                
+                            
+                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
                                       placeholder="{{ t('notes') }}"
                                       onchange="updateNotes({{ ti.id }}, this.value)"
                                       rows="1">{{ ti.notes or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
@@ -596,7 +592,7 @@
                          data-item-id="{{ ti.id }}">
 
                         <label class="item-cb">
-                            <input type="checkbox"
+                            <input type="checkbox" autocomplete="off"
                                    onchange="toggleItem({{ ti.id }}, this.checked)">
                             <span class="item-cb-box"></span>
                         </label>
@@ -609,11 +605,12 @@
                                             onclick="setStatus({{ ti.id }}, 'unchecked')"
                                             title="{{ t('status_unchecked') }}">↩</button>
                                 </div>
-                            </div>
-                            <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
+                            
+                                <textarea class="item-notes {% if ti.notes %}has-content{% endif %}"
                                       placeholder="{{ t('notes') }}"
                                       onchange="updateNotes({{ ti.id }}, this.value)"
                                       rows="1">{{ ti.notes or '' }}</textarea>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
