@@ -157,6 +157,15 @@
 }
 .trip-del-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
+.trip-addcat-btn {
+    flex-shrink: 0; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--primary); background: none;
+    border-radius: var(--r-xs); color: var(--primary);
+    cursor: pointer; transition: all 0.15s; font-size: 0.78rem;
+}
+.trip-addcat-btn:hover { background: var(--primary); color: white; }
+
 /* ── Empty state ────────────────────────────────────────── */
 .empty-state {
     text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);
@@ -255,17 +264,68 @@
                                     </div>
                                 </div>
 
-                                <form method="POST"
-                                      action="{{ url_for('delete_trip', trip_id=trip.id) }}"
-                                      onclick="event.stopPropagation();">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="trip-del-btn"
-                                            onclick="return confirm('{{ t('delete_confirm') }}')"
-                                            title="{{ t('delete') }}">
-                                        <i class="fas fa-trash"></i>
+                                
+                                <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;"
+                                     onclick="event.stopPropagation();">
+                                    <button type="button"
+                                            class="trip-addcat-btn trip-addcat-toggle"
+                                            data-target="addCatBody-{{ trip.id }}"
+                                            aria-expanded="false"
+                                            title="{{ t('add_category_to_trip') }}">
+                                        <i class="fas fa-layer-group"></i>
                                     </button>
-                                </form>
+                                    <form method="POST"
+                                          action="{{ url_for('delete_trip', trip_id=trip.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="trip-del-btn"
+                                                onclick="return confirm('{{ t('delete_confirm') }}')"
+                                                title="{{ t('delete') }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
+                            
+
+                            <!-- Add category to trip — panel colapsable -->
+                            <div class="acc-collapse" id="addCatBody-{{ trip.id }}"
+                                 onclick="event.stopPropagation();">
+                                <div>
+                                    <div style="padding-top:0.75rem;margin-top:0.75rem;border-top:1px solid var(--border);">
+                                        {% set trip_cat_ids = trip.items|map(attribute='item.category_id')|list %}
+                                        {% set available_cats = [] %}
+                                        {% for cat in categories %}
+                                            {% if cat.id not in trip_cat_ids %}
+                                                {% set _ = available_cats.append(cat) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if available_cats %}
+                                            <form method="POST" action="{{ url_for('dashboard') }}"
+                                                  style="display:flex;gap:0.5rem;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="trip_id" value="{{ trip.id }}">
+                                                <select name="category_id" class="form-select" style="flex:1;">
+                                                    {% for cat in available_cats %}
+                                                        <option value="{{ cat.id }}">{{ get_name(cat) }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" name="add_trip_category"
+                                                        class="btn btn-outline-primary btn-sm"
+                                                        style="flex-shrink:0;">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <p style="font-size:0.78rem;color:var(--text-muted);margin:0;">
+                                                {{ t('no_categories_to_add') }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div><!-- /.acc-collapse -->
+                       
+
+
+                        
                         </div>
                     {% endfor %}
                 {% else %}
@@ -499,5 +559,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+document.querySelectorAll('.trip-addcat-toggle').forEach(function (toggle) {
+        const body = document.getElementById(toggle.dataset.target);
+        if (!body) return;
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isOpen = body.classList.contains('open');
+            body.classList.toggle('open', !isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+        });
+    });
 </script>
 {% endblock %}
