@@ -33,4 +33,4 @@ Test me! https://663260932.xyz/travelpacker
 ## Administration
 
 To access the Admin panel and manage the default (global) items and categories, simply log in with the alias admin.
-code Code
+
