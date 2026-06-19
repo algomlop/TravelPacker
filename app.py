@@ -125,6 +125,8 @@ TRANSLATIONS = {
         "search_items": "Search items...",
         "all": "All",
         "or": "or",
+        "add_category_to_trip": "Add Category to Trip",
+        "no_categories_to_add": "All categories already added",
     },
     "es": {
         "app_title": "Equipaje de Viaje",
@@ -183,6 +185,8 @@ TRANSLATIONS = {
         "search_items": "Buscar elementos...",
         "all": "Todos",
         "or": "o",
+        "add_category_to_trip": "Añadir Categoría al Viaje",
+        "no_categories_to_add": "Ya están todas las categorías añadidas",
     },
 }
 
@@ -392,6 +396,37 @@ def dashboard():
                 db.session.add(Item(category_id=category.id, name_en=name, name_es=name, user_id=current_user.id))
                 db.session.commit()
                 flash(t_key("saved"), "success")
+        elif "add_trip_category" in request.form:
+            trip_id = request.form.get("trip_id")
+            cat_id = request.form.get("category_id")
+
+            trip_obj = None
+            if trip_id and trip_id.isdigit():
+                trip_obj = Trip.query.filter_by(id=int(trip_id), user_id=current_user.id).first()
+
+            category = None
+            if cat_id and cat_id.isdigit():
+                category = Category.query.filter(
+                    Category.id == int(cat_id),
+                    ((Category.user_id.is_(None)) & (Category.is_deleted == False)) | (Category.user_id == current_user.id),
+                ).first()
+
+            if not trip_obj or not category:
+                flash(t_key("invalid_selection"), "danger")
+            else:
+                existing_item_ids = {ti.item_id for ti in trip_obj.items}
+                items = Item.query.filter(
+                    Item.category_id == category.id,
+                    (Item.user_id.is_(None)) | (Item.user_id == current_user.id),
+                ).all()
+
+                for item in items:
+                    if item.id not in existing_item_ids:
+                        db.session.add(TripItem(trip_id=trip_obj.id, item_id=item.id))
+
+                db.session.commit()
+                flash(t_key("saved"), "success")
+                return redirect(url_for("trip", trip_id=trip_obj.id))
 
     trips = Trip.query.filter_by(user_id=current_user.id).order_by(Trip.created_at.desc()).all()
     categories = Category.query.filter(((Category.user_id.is_(None)) & (Category.is_deleted == False)) | (Category.user_id == current_user.id)).order_by(Category.name_en.asc()).all()
