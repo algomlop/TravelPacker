@@ -203,7 +203,7 @@
                         {% set na        = trip.items|selectattr('status','equalto','na')|list|length %}
                         {% set standby   = trip.items|selectattr('status','equalto','standby')|list|length %}
                         {% set unchecked = trip.items|selectattr('status','equalto','unchecked')|list|length %}
-                        {% set pct = ((packed / total * 100)|round|int) if total > 0 else 0 %}
+                        {% set pct = (((packed + na) / total * 100)|round|int) if total > 0 else 0 %}
 
                         <div class="trip-card"
                              onclick="window.location='{{ url_for('trip', trip_id=trip.id) }}'">
@@ -223,7 +223,7 @@
                                     <div class="trip-card-progress">
                                         <div class="trip-prog-row">
                                             <span class="trip-prog-pct">{{ pct }}% {{ t('progress_complete') }}</span>
-                                            <span style="font-size:0.71rem;color:var(--text-muted);">{{ packed }}/{{ total }}</span>
+                                            <span style="font-size:0.71rem;color:var(--text-muted);">{{ packed + na }}/{{ total }}</span>
                                         </div>
                                         <div class="prog-track">
                                             <div class="prog-fill {% if pct == 100 %}done{% endif %}"
