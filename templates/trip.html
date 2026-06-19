@@ -1083,7 +1083,29 @@ function addQuickItem(event, categoryId) {
     input.value = '';
 
 } 
+// Search
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    document.querySelectorAll('.item-row').forEach(item => {
+        const itemName = item.querySelector('.item-name').textContent.toLowerCase();
+        const notes = (item.querySelector('.item-notes')?.value || '').toLowerCase();
+        item.style.display = (itemName.includes(searchTerm) || notes.includes(searchTerm))
+            ? 'flex' : 'none';
+    });
+});
 
+// Filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.item-row').forEach(item => {
+            item.style.display = (filter === 'all' || item.dataset.status === filter)
+                ? 'flex' : 'none';
+        });
+    });
+});
 </script>
 
 {% endblock %}
