@@ -175,7 +175,7 @@
 /* ── Item rows ───────────────────────────────────────────── */
 .item-row {
     display: flex;
-    align-items: flex-start;   /* FIX: top-align so wrapped names don't clash with buttons */
+    align-items: flex-start;   
     gap: 0.6rem;
     padding: 0.55rem 0.6rem;
     border-radius: var(--r-sm);
@@ -200,13 +200,13 @@
     min-width: 0;
 }
 
-/* FIX: checkbox top-aligned to match first text line */
+
 .item-cb {
     position: relative;
     width: 22px; height: 22px;
     flex-shrink: 0;
     cursor: pointer;
-    margin-top: 1px;  /* nudge to align with first line of text */
+    margin-top: 1px;  
 }
 .item-cb input { opacity: 0; width: 0; height: 0; position: absolute; }
 .item-cb-box {
@@ -350,9 +350,9 @@
 
 /* ── Notes textarea ──────────────────────────────────────── */
 /* ── Notes textarea & Preview ────────────────────────────── */
-/* La vista previa elegante debajo del nombre */
+
 .notes-preview {
-    display: none; /* Oculto por defecto si no hay nota */
+    display: none; 
     font-size: 0.8rem;
     color: var(--text-muted);
     opacity: 0.8;
@@ -360,19 +360,19 @@
     padding-left: 2px;
     cursor: pointer;
     
-    /* Magia para cortar el texto con "..." si no cabe en una sola línea */
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     width: 100%;
 }
 
-/* Si la nota tiene contenido, la hacemos visible */
+
 .notes-preview.is-visible {
     display: block;
 }
 
-/* El cuadro de edición de la nota */
+
 .item-notes {
     width: 100%;
     margin-top: 0.5rem;
@@ -393,7 +393,7 @@
     border-color: var(--primary);
 }
 
-/* Cuando el editor está abierto, se muestra y animamos su aparición */
+
 .item-notes.is-open {
     display: block;
     animation: fadeInNote 0.15s ease-out;
@@ -404,7 +404,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Hacemos que el botón cambie de color si tiene nota guardada */
+
 .act-btn.notes-toggle.has-notes {
     color: var(--primary);
 }
@@ -500,11 +500,13 @@
         <div class="trip-header-sub">
             {% set total  = namespace(n=0) %}
             {% set packed = namespace(n=0) %}
+            {% set na_it = namespace(n=0) %}
             {% for cat, items in grouped.items() %}
                 {% set total.n  = total.n  + items|length %}
                 {% set packed.n = packed.n + items|selectattr('status','equalto','packed')|list|length %}
+                {% set na_it.n = na_it.n + items|selectattr('status','equalto','na')|list|length %}
             {% endfor %}
-            {{ packed.n }}/{{ total.n }} {{ t('progress_complete') }}
+            {{ (packed.n|default(0)) + (na_it.n|default(0)) }} / {{ total.n|default(0) }}
         </div>
     </div>
     <a class="trip-header-back" href="{{ url_for('dashboard') }}">
@@ -530,12 +532,13 @@
 <!-- ── Category sections ─────────────────────────────────────── -->
 {% if grouped %}
     {% for cat, items in grouped.items() %}
-    {# FIX: split into 4 groups so standby gets its own separator #}
+
     {% set unchecked_items = items|selectattr('status','equalto','unchecked')|list %}
     {% set standby_items   = items|selectattr('status','equalto','standby')|list %}
     {% set packed_items    = items|selectattr('status','equalto','packed')|list %}
     {% set na_items        = items|selectattr('status','equalto','na')|list %}
-    {% set pct = ((packed_items|length / items|length * 100)|round|int) if items|length > 0 else 0 %}
+    {% set done_items = packed_items + na_items %}
+    {% set pct = ((done_items|length / items|length * 100)|round|int) if items|length > 0 else 0 %}
 
     <div class="cat-section" data-category="{{ cat.id }}">
 
@@ -550,7 +553,7 @@
                     <div class="cat-prog-fill {% if pct == 100 %}done{% endif %}"
                          style="width:{{ pct }}%;"></div>
                 </div>
-                <span class="cat-prog-text">{{ packed_items|length }}/{{ items|length }}</span>
+                <span class="cat-prog-text">{{ done_items|length }}/{{ items|length }}</span>
             </div>
             <i class="fas fa-chevron-down cat-chevron"></i>
         </button>
@@ -904,6 +907,7 @@ function rebuildCategoryBody(catBody) {
     if (addForm) catBody.appendChild(addForm);
 
     refreshCategoryCounters(catBody.closest('.cat-section'));
+    refreshTripCounters();
 }
 
 function makeSeparator(status, count) {
@@ -934,12 +938,14 @@ function refreshCategoryCounters(catSection) {
     const rows = catSection.querySelectorAll('.item-row');
     const total = rows.length;
     const packed = catSection.querySelectorAll('.item-row.status-packed').length;
-    const pct = total ? Math.round((packed / total) * 100) : 0;
+    const items_na = catSection.querySelectorAll('.item-row.status-na').length;
+    const pct = total ? Math.round(((packed + items_na) / total) * 100) : 0;
+ 
 
     const text = catSection.querySelector('.cat-prog-text');
     const fill = catSection.querySelector('.cat-prog-fill');
 
-    if (text) text.textContent = `${packed}/${total}`;
+    if (text) text.textContent = `${packed + items_na} /${total}`;
     if (fill) {
         fill.style.width = `${pct}%`;
         fill.classList.toggle('done', pct === 100);
@@ -954,6 +960,25 @@ function refreshCategoryCounters(catSection) {
         if (span) span.textContent = count;
         sep.style.display = count ? '' : 'none';
     });
+}
+
+
+function refreshTripCounters() {
+   
+
+    const rows = document.querySelectorAll('.item-row');
+    const total = rows.length;
+    const packed = document.querySelectorAll('.item-row.status-packed').length;
+    const items_na = document.querySelectorAll('.item-row.status-na').length;
+    const pct = total ? Math.round(((packed + items_na) / total) * 100) : 0;
+ 
+
+    const text = document.querySelector('.trip-header-sub');
+
+    if (text) text.textContent = `${packed + items_na} / ${total}`;
+ 
+
+  
 }
 
 function toggleItem(id, packed) { updateItem(id, { status: packed ? 'packed' : 'unchecked' }); }
