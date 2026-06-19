@@ -2,12 +2,14 @@
 
 A simple, functional web application to manage your travel checklists and ensure you never forget anything (summer items, winter items, pet requirements, etc.).
 
+Test me! https://663260932.xyz/travelpacker
+
 ## Features
 - **No passwords required:** Login using a simple Alias.
 - **Guest Mode:** Try it out without saving permanent data (wiped after 24 hours).
 - **Customizable:** Pre-filled default categories. Users can also create their own categories and items.
 - **Admin Panel:** An administrator can manage the global defaults.
-- **Multilingual:** Supports English and Spanish out-of-the-box, prepared to scale.
+- **Multilingual:** Supports English and Spanish out-of-the-box.
 - **Dynamic Checklists:** 4 states per item (To Pack, Packed, N/A, Standby) + custom notes. Saves automatically.
 
 ## Installation
